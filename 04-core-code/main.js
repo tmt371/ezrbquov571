@@ -26,6 +26,45 @@ import { DriveAccessoriesView } from './ui/views/drive-accessories-view.js';
 
 const AUTOSAVE_STORAGE_KEY = 'quoteAutoSaveData';
 
+/**
+ * [NEW] A migration function to convert old auto-saved data to the new structure.
+ * @param {object} oldData - The auto-saved data object (potentially in the old format).
+ * @returns {object} The data in the new, generic product structure.
+ */
+const migrateAutoSaveData = (oldData) => {
+    // If the data already has the new structure, do nothing.
+    if (oldData && oldData.products && oldData.currentProduct) {
+        console.log("Auto-saved data is already in the new format.");
+        return oldData;
+    }
+
+    // If it's the old structure (has rollerBlindItems at the root), migrate it.
+    if (oldData && oldData.rollerBlindItems) {
+        console.warn("Migrating legacy auto-saved data to the new format...");
+        const newData = {
+            currentProduct: 'rollerBlind',
+            products: {
+                rollerBlind: {
+                    items: oldData.rollerBlindItems,
+                    summary: oldData.summary || initialState.quoteData.products.rollerBlind.summary
+                }
+            },
+            // Copy over other global properties
+            quoteId: oldData.quoteId || null,
+            issueDate: oldData.issueDate || null,
+            dueDate: oldData.dueDate || null,
+            status: oldData.status || "Configuring",
+            costDiscountPercentage: oldData.costDiscountPercentage || 0,
+            customer: oldData.customer || { name: "", address: "", phone: "", email: "" }
+        };
+        return newData;
+    }
+
+    // If data is invalid or doesn't match either structure, return null.
+    return null;
+};
+
+
 class App {
     constructor() {
         let startingState = JSON.parse(JSON.stringify(initialState));
@@ -34,9 +73,18 @@ class App {
             if (autoSavedDataJSON) {
                 const message = "It looks like you have unsaved work from a previous session.\n\n- 'OK' to restore the unsaved work.\n- 'Cancel' to start a new, blank quote.";
                 if (window.confirm(message)) {
-                    const autoSavedData = JSON.parse(autoSavedDataJSON);
-                    startingState.quoteData = autoSavedData;
-                    console.log("Restored data from auto-save.");
+                    let autoSavedData = JSON.parse(autoSavedDataJSON);
+
+                    // [NEW] Run the migration function on the loaded data.
+                    const migratedData = migrateAutoSaveData(autoSavedData);
+
+                    if (migratedData) {
+                        startingState.quoteData = migratedData;
+                        console.log("Restored data from auto-save.");
+                    } else {
+                        console.error("Could not restore auto-saved data: format is unrecognized.");
+                        localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
+                    }
                 } else {
                     localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
                     console.log("Auto-saved data discarded by user.");
@@ -56,7 +104,8 @@ class App {
         const quoteService = new QuoteService({
             initialState: startingState,
             productFactory: productFactory,
-            configManager: this.configManager
+            configManager: this.configManager,
+            initialState: startingState // Pass the full initial state for reset functionality
         });
         const calculationService = new CalculationService({
             productFactory: productFactory,
