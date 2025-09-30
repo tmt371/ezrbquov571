@@ -18,15 +18,23 @@ const mockProductFactory = {
     getProductStrategy: () => mockProductStrategy
 };
 
-// [REFACTORED] Updated the mock config manager to provide the new, full type sequence for testing
 const mockConfigManager = {
     getFabricTypeSequence: () => ['B1', 'B2', 'B3', 'B4', 'B5', 'SN']
 };
 
+// [REFACTORED] Updated the mock initial state to match the new generic structure.
 const getMockInitialState = () => ({
     quoteData: {
-        rollerBlindItems: [{ ...getMockInitialItem() }],
-        summary: { totalSum: 0 }
+        currentProduct: 'rollerBlind',
+        products: {
+            rollerBlind: {
+                items: [{ ...getMockInitialItem() }],
+                summary: { totalSum: 0 }
+            }
+        },
+        // Global properties
+        costDiscountPercentage: 0,
+        customer: {}
     }
 });
 
@@ -34,10 +42,9 @@ const getMockInitialState = () => ({
 // --- Test Suite ---
 describe('QuoteService', () => {
     let quoteService;
-    let mockInitialItem;
 
     beforeEach(() => {
-        mockInitialItem = getMockInitialItem(); 
+        // The service will now be initialized with the new, correctly structured mock state.
         quoteService = new QuoteService({
             initialState: getMockInitialState(),
             productFactory: mockProductFactory,
@@ -97,7 +104,6 @@ describe('QuoteService', () => {
         expect(items).toHaveLength(2);
     });
 
-    // [REFACTORED] Expanded test for cycleItemType to cover the full new sequence
     it('should cycle through all fabric types based on the sequence from configManager', () => {
         quoteService.updateItemValue(0, 'width', 1000);
         quoteService.updateItemValue(0, 'height', 1000);

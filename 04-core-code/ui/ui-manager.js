@@ -63,9 +63,21 @@ export class UIManager {
         const isDetailView = state.ui.currentView === 'DETAIL_CONFIG';
         this.appElement.classList.toggle('detail-view-active', isDetailView);
 
+        // [NEW] Get the current product's data based on the new state structure.
+        const currentProductKey = state.quoteData.currentProduct;
+        const currentProductData = state.quoteData.products[currentProductKey];
+
+        // The table component receives the full state and is responsible for extracting the items list itself.
+        // This will be modified in the table-component.js file.
         this.tableComponent.render(state);
-        this.summaryComponent.render(state.quoteData.summary, state.ui.isSumOutdated);
+
+        // [REFACTORED] Pass the product-specific summary to the summary component.
+        this.summaryComponent.render(currentProductData.summary, state.ui.isSumOutdated);
+
+        // The left panel component also receives the full state objects.
+        // It will be modified internally to read from the new structure.
         this.leftPanelComponent.render(state.ui, state.quoteData);
+        
         this.rightPanelComponent.render(state.ui);
         
         this._updateButtonStates(state);
@@ -136,7 +148,10 @@ export class UIManager {
 
     _updateButtonStates(state) {
         const { selectedRowIndex, isMultiSelectMode, multiSelectSelectedIndexes } = state.ui;
-        const items = state.quoteData.rollerBlindItems;
+        // [REFACTORED] Get items from the correct location in the new state structure.
+        const currentProductKey = state.quoteData.currentProduct;
+        const items = state.quoteData.products[currentProductKey].items;
+
         const isSingleRowSelected = selectedRowIndex !== null;
         
         let insertDisabled = true;

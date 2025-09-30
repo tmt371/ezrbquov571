@@ -31,29 +31,55 @@ export const initialState = {
         k5CordTotalPrice: null
     },
     quoteData: {
-        // 核心項目列表
-        rollerBlindItems: [
-            { 
-                itemId: `item-${Date.now()}`, 
-                // --- Phase 1 Fields ---
-                width: null, 
-                height: null, 
-                fabricType: null, 
-                linePrice: null,
-                // --- Phase 2 Fields ---
-                location: '',
-                fabric: '',
-                color: '',
-                over: '',
-                oi: '',
-                lr: '',
-                dual: '',
-                chain: null,
-                winder: '',
-                motor: ''
+        // [NEW] Added to track the active product.
+        currentProduct: 'rollerBlind',
+
+        // [NEW] A generic container for different product types.
+        products: {
+            // [REFACTORED] The 'rollerBlind' specific data is now nested.
+            rollerBlind: {
+                // [REFACTORED] Renamed from 'rollerBlindItems' to 'items' for genericity.
+                items: [
+                    { 
+                        itemId: `item-${Date.now()}`, 
+                        // --- Phase 1 Fields ---
+                        width: null, 
+                        height: null, 
+                        fabricType: null, 
+                        linePrice: null,
+                        // --- Phase 2 Fields ---
+                        location: '',
+                        fabric: '',
+                        color: '',
+                        over: '',
+                        oi: '',
+                        lr: '',
+                        dual: '',
+                        chain: null,
+                        winder: '',
+                        motor: ''
+                    }
+                ],
+                // [REFACTORED] The summary is now encapsulated with its product.
+                summary: { 
+                    totalSum: null,
+                    accessories: {
+                        winder: { count: 0, price: 0 },
+                        motor: { count: 0, price: 0 },
+                        remote: { type: 'standard', count: 0, price: 0 },
+                        charger: { count: 0, price: 0 },
+                        cord3m: { count: 0, price: 0 },
+                        remoteCostSum: null,
+                        winderCostSum: null,
+                        motorCostSum: null,
+                        chargerCostSum: null,
+                        cordCostSum: null,
+                    }
+                }
             }
-        ],
-        // 報價單元數據
+        },
+        
+        // --- Global Quote Properties ---
         quoteId: null,
         issueDate: null,
         dueDate: null,
@@ -64,23 +90,6 @@ export const initialState = {
             address: "",
             phone: "",
             email: ""
-        },
-        // 總價總結
-        summary: { 
-            totalSum: null,
-            accessories: {
-                winder: { count: 0, price: 0 },
-                motor: { count: 0, price: 0 },
-                remote: { type: 'standard', count: 0, price: 0 },
-                charger: { count: 0, price: 0 },
-                cord3m: { count: 0, price: 0 },
-                remoteCostSum: null,
-                winderCostSum: null,
-                motorCostSum: null,
-                chargerCostSum: null,
-                cordCostSum: null,
-                // [REMOVED] The dualCostSum field has been removed as per the instructions.
-            }
         }
     }
 };

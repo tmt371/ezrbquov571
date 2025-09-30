@@ -21,7 +21,13 @@ export class CalculationService {
         }
 
         const updatedQuoteData = JSON.parse(JSON.stringify(quoteData));
-        const items = updatedQuoteData.rollerBlindItems; 
+        
+        // [REFACTORED] Dynamically get items and summary from the current product's data.
+        const currentProductKey = updatedQuoteData.currentProduct;
+        const currentProductData = updatedQuoteData.products[currentProductKey];
+        const items = currentProductData.items; 
+        const summary = currentProductData.summary;
+
         let firstError = null;
 
         items.forEach((item, index) => {
@@ -46,8 +52,8 @@ export class CalculationService {
         const itemsTotal = items.reduce((sum, item) => sum + (item.linePrice || 0), 0);
         
         let accessoriesTotal = 0;
-        if (updatedQuoteData.summary && updatedQuoteData.summary.accessories) {
-            const acc = updatedQuoteData.summary.accessories;
+        if (summary && summary.accessories) {
+            const acc = summary.accessories;
             accessoriesTotal += acc.winder?.price || 0;
             accessoriesTotal += acc.motor?.price || 0;
             accessoriesTotal += acc.remote?.price || 0;
@@ -55,7 +61,8 @@ export class CalculationService {
             accessoriesTotal += acc.cord3m?.price || 0;
         }
 
-        updatedQuoteData.summary.totalSum = itemsTotal + accessoriesTotal;
+        // [REFACTORED] Update the total sum within the product-specific summary.
+        summary.totalSum = itemsTotal + accessoriesTotal;
 
         return { updatedQuoteData, firstError };
     }

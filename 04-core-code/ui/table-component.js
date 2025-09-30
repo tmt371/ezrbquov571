@@ -40,7 +40,10 @@ export class TableComponent {
     }
 
     render(state) {
-        const { rollerBlindItems } = state.quoteData;
+        // [REFACTORED] Get items from the correct, nested location in the new state structure.
+        const currentProductKey = state.quoteData.currentProduct;
+        const items = state.quoteData.products[currentProductKey].items;
+
         const { visibleColumns, isLocationEditMode, targetCell } = state.ui;
 
         this.tableElement.innerHTML = '';
@@ -63,7 +66,7 @@ export class TableComponent {
         });
 
         const tbody = this.tableElement.createTBody();
-        if (rollerBlindItems.length === 0 || (rollerBlindItems.length === 1 && !rollerBlindItems[0].width && !rollerBlindItems[0].height)) {
+        if (items.length === 0 || (items.length === 1 && !items[0].width && !items[0].height)) {
             const row = tbody.insertRow();
             const cell = row.insertCell();
             cell.colSpan = visibleColumns.length;
@@ -73,7 +76,7 @@ export class TableComponent {
             return;
         }
 
-        rollerBlindItems.forEach((item, index) => {
+        items.forEach((item, index) => {
             const row = tbody.insertRow();
             row.dataset.rowIndex = index;
 
@@ -113,17 +116,18 @@ export class TableComponent {
     _createCellRenderers() {
         return {
             sequence: (cell, item, index, state) => {
-                // [REFACTORED] Updated to use new generic state names
                 const { selectedRowIndex, isMultiSelectMode, multiSelectSelectedIndexes, lfSelectedRowIndexes } = state.ui;
+                // [REFACTORED] The items list is now correctly derived from the state object.
+                const currentProductKey = state.quoteData.currentProduct;
+                const items = state.quoteData.products[currentProductKey].items;
+
                 cell.textContent = index + 1;
-                const isLastRowEmpty = (index === state.quoteData.rollerBlindItems.length - 1) && (!item.width && !item.height);
+                const isLastRowEmpty = (index === items.length - 1) && (!item.width && !item.height);
                 
                 if (lfSelectedRowIndexes.has(index)) {
                     cell.classList.add('lf-selection-highlight');
-                // [REFACTORED] Updated to check new 'isMultiSelectMode' state
                 } else if (isMultiSelectMode) {
                     if (isLastRowEmpty) cell.classList.add('selection-disabled');
-                    // [REFACTORED] Updated to read from new 'multiSelectSelectedIndexes' state
                     else if (multiSelectSelectedIndexes.has(index)) cell.classList.add('multi-selected-row');
                 } else if (index === selectedRowIndex) {
                     cell.classList.add('selected-row-highlight');

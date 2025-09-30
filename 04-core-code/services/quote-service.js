@@ -11,41 +11,59 @@ export class QuoteService {
         this.quoteData = JSON.parse(JSON.stringify(initialState.quoteData));
         this.productFactory = productFactory;
         this.configManager = configManager; 
-        this.initialSummary = JSON.parse(JSON.stringify(initialState.quoteData.summary));
+        this.initialState = initialState; // [NEW] Store initial state for resetting purposes.
 
-        this.currentProduct = 'rollerBlind';
-        this.productStrategy = this.productFactory.getProductStrategy(this.currentProduct);
-        this.itemListName = `${this.currentProduct}Items`;
-
-        console.log("QuoteService Initialized.");
+        // [REFACTORED] The service no longer holds a static itemListName.
+        // It will dynamically determine the correct data to use based on quoteData.currentProduct.
+        console.log("QuoteService Initialized for Generic State Structure.");
     }
+
+    // --- [NEW] Private helper methods for accessing product-specific data ---
+
+    /**
+     * Gets the key for the currently active product (e.g., 'rollerBlind').
+     * @private
+     */
+    _getCurrentProductKey() {
+        return this.quoteData.currentProduct;
+    }
+
+    /**
+     * Gets the data object for the currently active product.
+     * @private
+     */
+    _getCurrentProductData() {
+        const productKey = this._getCurrentProductKey();
+        return this.quoteData.products[productKey];
+    }
+    
+    // --- Public API ---
 
     getQuoteData() {
         return this.quoteData;
     }
 
     getItems() {
-        return this.quoteData[this.itemListName];
+        // [REFACTORED] Dynamically get items from the current product's data.
+        const productData = this._getCurrentProductData();
+        return productData ? productData.items : [];
     }
     
     getCurrentProductType() {
-        return this.currentProduct;
-    }
-
-    _getItems() {
-        return this.quoteData[this.itemListName];
+        return this.quoteData.currentProduct;
     }
 
     insertRow(selectedIndex) {
-        const items = this._getItems();
-        const newItem = this.productStrategy.getInitialItemData();
+        const items = this.getItems();
+        const productStrategy = this.productFactory.getProductStrategy(this._getCurrentProductKey());
+        const newItem = productStrategy.getInitialItemData();
         const newRowIndex = selectedIndex + 1;
         items.splice(newRowIndex, 0, newItem);
         return newRowIndex;
     }
 
     deleteRow(selectedIndex) {
-        const items = this._getItems();
+        const items = this.getItems();
         const isLastRow = selectedIndex === items.length - 1;
         const item = items[selectedIndex];
         const isRowEmpty = !item.width && !item.height && !item.fabricType;
@@ -64,16 +82,17 @@ export class QuoteService {
     }
 
     clearRow(selectedIndex) {
-        const itemToClear = this._getItems()[selectedIndex];
+        const itemToClear = this.getItems()[selectedIndex];
         if (itemToClear) {
-            const newItem = this.productStrategy.getInitialItemData();
+            const productStrategy = this.productFactory.getProductStrategy(this._getCurrentProductKey());
+            const newItem = productStrategy.getInitialItemData();
             newItem.itemId = itemToClear.itemId;
-            this._getItems()[selectedIndex] = newItem;
+            this.getItems()[selectedIndex] = newItem;
         }
     }
 
     updateItemValue(rowIndex, column, value) {
-        const targetItem = this._getItems()[rowIndex];
+        const targetItem = this.getItems()[rowIndex];
         if (!targetItem) return false;
 
         if (targetItem[column] !== value) {
@@ -93,7 +112,7 @@ export class QuoteService {
     }
     
     updateItemProperty(rowIndex, property, value) {
-        const item = this._getItems()[rowIndex];
+        const item = this.getItems()[rowIndex];
         if (item && item[property] !== value) {
             item[property] = value;
             return true;
@@ -102,7 +121,7 @@ export class QuoteService {
     }
 
     updateWinderMotorProperty(rowIndex, property, value) {
-        const item = this._getItems()[rowIndex];
+        const item = this.getItems()[rowIndex];
         if (!item) return false;
 
         if (item[property] !== value) {
@@ -117,38 +136,45 @@ export class QuoteService {
     }
     
     updateAccessorySummary(data) {
-        if (data && this.quoteData.summary.accessories) {
-            Object.assign(this.quoteData.summary.accessories, data);
+        const productSummary = this._getCurrentProductData()?.summary;
+        if (data && productSummary && productSummary.accessories) {
+            Object.assign(productSummary.accessories, data);
         }
     }
 
+    // [REFACTORED] All cost sum updates now target the nested summary object.
     updateRemoteCostSum(cost) {
-        if (this.quoteData.summary && this.quoteData.summary.accessories) {
-            this.quoteData.summary.accessories.remoteCostSum = cost;
+        const accessories = this._getCurrentProductData()?.summary?.accessories;
+        if (accessories) {
+            accessories.remoteCostSum = cost;
         }
     }
 
     updateWinderCostSum(cost) {
-        if (this.quoteData.summary && this.quoteData.summary.accessories) {
-            this.quoteData.summary.accessories.winderCostSum = cost;
+        const accessories = this._getCurrentProductData()?.summary?.accessories;
+        if (accessories) {
+            accessories.winderCostSum = cost;
         }
     }
 
     updateMotorCostSum(cost) {
-        if (this.quoteData.summary && this.quoteData.summary.accessories) {
-            this.quoteData.summary.accessories.motorCostSum = cost;
+        const accessories = this._getCurrentProductData()?.summary?.accessories;
+        if (accessories) {
+            accessories.motorCostSum = cost;
         }
     }
 
     updateChargerCostSum(cost) {
-        if (this.quoteData.summary && this.quoteData.summary.accessories) {
-            this.quoteData.summary.accessories.chargerCostSum = cost;
+        const accessories = this._getCurrentProductData()?.summary?.accessories;
+        if (accessories) {
+            accessories.chargerCostSum = cost;
         }
     }
 
     updateCordCostSum(cost) {
-        if (this.quoteData.summary && this.quoteData.summary.accessories) {
-            this.quoteData.summary.accessories.cordCostSum = cost;
+        const accessories = this._getCurrentProductData()?.summary?.accessories;
+        if (accessories) {
+            accessories.cordCostSum = cost;
         }
     }
 
@@ -157,7 +183,7 @@ export class QuoteService {
     }
 
     cycleK3Property(rowIndex, column) {
-        const item = this._getItems()[rowIndex];
+        const item = this.getItems()[rowIndex];
         if (!item) return false;
 
         const currentValue = item[column] || '';
@@ -187,7 +213,7 @@ export class QuoteService {
     }
 
     batchUpdateProperty(property, value) {
-        const items = this._getItems();
+        const items = this.getItems();
         let changed = false;
         items.forEach(item => {
             if (item.width || item.height) {
@@ -201,7 +227,7 @@ export class QuoteService {
     }
     
     batchUpdatePropertyByType(type, property, value) {
-        const items = this._getItems();
+        const items = this.getItems();
         let changed = false;
         items.forEach((item, index) => {
             if (item.fabricType === type) {
@@ -215,7 +241,7 @@ export class QuoteService {
     }
 
     batchUpdateLFProperties(rowIndexes, fabricName, fabricColor) {
-        const items = this._getItems();
+        const items = this.getItems();
         const newFabricName = `L-Filter ${fabricName}`;
         let changed = false;
 
@@ -236,7 +262,7 @@ export class QuoteService {
     }
     
     removeLFProperties(rowIndexes) {
-        const items = this._getItems();
+        const items = this.getItems();
         let changed = false;
         for (const index of rowIndexes) {
             const item = items[index];
@@ -255,7 +281,7 @@ export class QuoteService {
     }
 
     cycleItemType(rowIndex) {
-        const item = this._getItems()[rowIndex];
+        const item = this.getItems()[rowIndex];
         if (!item || (!item.width && !item.height)) return false;
 
         const TYPE_SEQUENCE = this.configManager.getFabricTypeSequence();
@@ -269,7 +295,7 @@ export class QuoteService {
     }
 
     setItemType(rowIndex, newType) {
-        const item = this._getItems()[rowIndex];
+        const item = this.getItems()[rowIndex];
         if (item && item.fabricType !== newType) {
             item.fabricType = newType;
             item.linePrice = null;
@@ -279,7 +305,7 @@ export class QuoteService {
     }
 
     batchUpdateFabricType(newType) {
-        const items = this._getItems();
+        const items = this.getItems();
         let changed = false;
         items.forEach(item => {
             if (item.width && item.height) {
@@ -287,6 +313,7 @@ export class QuoteService {
                     item.fabricType = newType;
                     item.linePrice = null;
                     changed = true;
+
                 }
             }
         });
@@ -294,7 +321,7 @@ export class QuoteService {
     }
 
     batchUpdateFabricTypeForSelection(selectedIndexes, newType) {
-        const items = this._getItems();
+        const items = this.getItems();
         let changed = false;
         for (const index of selectedIndexes) {
             const item = items[index];
@@ -303,7 +330,6 @@ export class QuoteService {
                     item.fabricType = newType;
                     item.linePrice = null;
                     changed = true;
-
                 }
             }
         }
@@ -311,13 +337,12 @@ export class QuoteService {
     }
 
     reset() {
-        const initialItem = this.productStrategy.getInitialItemData();
-        this.quoteData[this.itemListName] = [initialItem];
-        this.quoteData.summary = JSON.parse(JSON.stringify(this.initialSummary));
+        // [REFACTORED] Reset the entire quoteData object from the initial state blueprint.
+        this.quoteData = JSON.parse(JSON.stringify(this.initialState.quoteData));
     }
 
     hasData() {
-        const items = this._getItems();
+        const items = this.getItems();
         if (!items) return false;
         return items.length > 1 || (items.length === 1 && (items[0].width || items[0].height));
     }
@@ -333,7 +358,8 @@ export class QuoteService {
     }
 
     consolidateEmptyRows() {
-        const items = this._getItems();
+        const items = this.getItems();
+        if (!items) return;
         
         while (items.length > 1) {
             const lastItem = items[items.length - 1];
@@ -352,7 +378,8 @@ export class QuoteService {
         if (!lastItem) return;
         const isLastItemEmpty = !lastItem.width && !lastItem.height && !lastItem.fabricType;
         if (!isLastItemEmpty) {
-            const newItem = this.productStrategy.getInitialItemData();
+            const productStrategy = this.productFactory.getProductStrategy(this._getCurrentProductKey());
+            const newItem = productStrategy.getInitialItemData();
             items.push(newItem);
         }
     }

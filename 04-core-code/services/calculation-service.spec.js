@@ -17,7 +17,6 @@ const mockProductStrategy = {
 
 const mockConfigManager = {
     getPriceMatrix: jest.fn((fabricType) => {
-        // [REFACTORED] Updated mock to handle aliases for testing purposes
         if (fabricType === 'B5') {
             return { name: 'SHAW - VIBE', aliasFor: 'SN' };
         }
@@ -44,55 +43,72 @@ describe('CalculationService (Refactored)', () => {
     });
 
     it('should correctly calculate and sum prices for valid items using the product strategy', () => {
-        // [REFACTORED] Updated mock data to use a new valid fabric type name 'B1'
+        // [REFACTORED] Updated mock data to use the new generic state structure.
         const quoteData = {
-            rollerBlindItems: [
-                { width: 1000, height: 1000, fabricType: 'B1', linePrice: null },
-                { width: 2000, height: 1500, fabricType: 'B1', linePrice: null },
-                { width: null, height: null, fabricType: null, linePrice: null }
-            ],
-            summary: { 
-                totalSum: 0,
-                accessories: {
-                    winder: { price: 30 },
-                    motor: { price: 250 }
+            currentProduct: 'rollerBlind',
+            products: {
+                rollerBlind: {
+                    items: [
+                        { width: 1000, height: 1000, fabricType: 'B1', linePrice: null },
+                        { width: 2000, height: 1500, fabricType: 'B1', linePrice: null },
+                        { width: null, height: null, fabricType: null, linePrice: null }
+                    ],
+                    summary: { 
+                        totalSum: 0,
+                        accessories: {
+                            winder: { price: 30 },
+                            motor: { price: 250 }
+                        }
+                    }
                 }
             }
         };
 
         const { updatedQuoteData, firstError } = calculationService.calculateAndSum(quoteData, mockProductStrategy);
 
-        expect(updatedQuoteData.summary.totalSum).toBe(1080);
-        expect(updatedQuoteData.rollerBlindItems[0].linePrice).toBe(300);
-        expect(updatedQuoteData.rollerBlindItems[1].linePrice).toBe(500);
+        // [REFACTORED] Assertions now point to the correct nested structure.
+        const productSummary = updatedQuoteData.products.rollerBlind.summary;
+        const productItems = updatedQuoteData.products.rollerBlind.items;
+
+        expect(productSummary.totalSum).toBe(1080);
+        expect(productItems[0].linePrice).toBe(300);
+        expect(productItems[1].linePrice).toBe(500);
         expect(firstError).toBeNull();
         expect(mockConfigManager.getPriceMatrix).toHaveBeenCalledTimes(2);
         expect(mockProductStrategy.calculatePrice).toHaveBeenCalledTimes(2);
     });
 
     it('should return the first error encountered and still sum valid items', () => {
-        // [REFACTORED] Updated mock data to use a new valid fabric type name 'B3'
+        // [REFACTORED] Updated mock data to use the new generic state structure.
         const quoteData = {
-            rollerBlindItems: [
-                { width: 1000, height: 1000, fabricType: 'B3', linePrice: null },
-                { width: 4000, height: 1500, fabricType: 'B3', linePrice: null }, 
-                { width: 2000, height: 2000, fabricType: 'B3', linePrice: null }
-            ],
-            summary: { totalSum: 0, accessories: {} }
+            currentProduct: 'rollerBlind',
+            products: {
+                rollerBlind: {
+                    items: [
+                        { width: 1000, height: 1000, fabricType: 'B3', linePrice: null },
+                        { width: 4000, height: 1500, fabricType: 'B3', linePrice: null }, 
+                        { width: 2000, height: 2000, fabricType: 'B3', linePrice: null }
+                    ],
+                    summary: { totalSum: 0, accessories: {} }
+                }
+            }
         };
 
         const { updatedQuoteData, firstError } = calculationService.calculateAndSum(quoteData, mockProductStrategy);
 
-        expect(updatedQuoteData.summary.totalSum).toBe(900);
-        expect(updatedQuoteData.rollerBlindItems[0].linePrice).toBe(300);
-        expect(updatedQuoteData.rollerBlindItems[1].linePrice).toBeNull();
-        expect(updatedQuoteData.rollerBlindItems[2].linePrice).toBe(600);
+        // [REFACTORED] Assertions now point to the correct nested structure.
+        const productSummary = updatedQuoteData.products.rollerBlind.summary;
+        const productItems = updatedQuoteData.products.rollerBlind.items;
+
+        expect(productSummary.totalSum).toBe(900);
+        expect(productItems[0].linePrice).toBe(300);
+        expect(productItems[1].linePrice).toBeNull();
+        expect(productItems[2].linePrice).toBe(600);
         expect(firstError).not.toBeNull();
         expect(firstError.rowIndex).toBe(1);
         expect(firstError.message).toContain('Width exceeds maximum.');
     });
 
-    // [NEW] Test to ensure the new generic accessory calculation bridge method works
     it('should correctly call the strategy for accessory pricing', () => {
         const productType = 'rollerBlind';
         const items = [{ dual: 'D' }, { dual: 'D' }];

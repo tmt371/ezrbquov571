@@ -119,7 +119,10 @@ export class LeftPanelComponent {
             summaryWinderPrice, summaryMotorPrice,
             summaryRemotePrice, summaryChargerPrice, summaryCordPrice, summaryAccessoriesTotal
         } = uiState;
-        const { rollerBlindItems } = quoteData;
+        
+        // [REFACTORED] Get items from the correct location in the new state structure.
+        const currentProductKey = quoteData.currentProduct;
+        const items = quoteData.products[currentProductKey].items;
 
         // --- K1 Location Input State ---
         if (this.locationInput) {
@@ -142,7 +145,7 @@ export class LeftPanelComponent {
         if (this.lfButton) this.lfButton.classList.toggle('active', isLFSelectMode);
         if (this.lfDelButton) this.lfDelButton.classList.toggle('active', isLFDeleteMode);
 
-        const hasB2 = rollerBlindItems.some(item => item.fabricType === 'B2');
+        const hasB2 = items.some(item => item.fabricType === 'B2');
         const hasLFModified = lfModifiedRowIndexes.size > 0;
 
         if (this.locationButton) this.locationButton.disabled = isAnyK2ModeActive;

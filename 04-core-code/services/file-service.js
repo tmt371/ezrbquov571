@@ -90,10 +90,17 @@ export class FileService {
                 return { success: false, message: `Unsupported file type: ${fileName}` };
             }
 
-            // Basic validation to check if the loaded data looks like our quoteData structure
-            if (loadedData && loadedData.rollerBlindItems && Array.isArray(loadedData.rollerBlindItems)) {
+            // [REFACTORED] Updated validation to check for the new generic state structure.
+            const currentProduct = loadedData?.currentProduct;
+            const productData = loadedData?.products?.[currentProduct];
+
+            if (productData && Array.isArray(productData.items)) {
                 return { success: true, data: loadedData, message: `Successfully loaded data from ${fileName}` };
             } else {
+                // Also check for the old structure for backward compatibility during transition.
+                if (loadedData && loadedData.rollerBlindItems && Array.isArray(loadedData.rollerBlindItems)) {
+                     return { success: true, data: loadedData, message: `Successfully loaded legacy data from ${fileName}` };
+                }
                 throw new Error("File content is not in a valid quote format.");
             }
         } catch (error) {
