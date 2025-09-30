@@ -34,6 +34,9 @@ export class UIService {
         this.state.driveRemoteCount = 0;
         this.state.driveChargerCount = 0;
         this.state.driveCordCount = 0;
+        
+        // [REFACTORED] These properties are no longer the single source of truth for F2.
+        // They are specific to the K4 UI.
         this.state.driveWinderTotalPrice = null;
         this.state.driveMotorTotalPrice = null;
         this.state.driveRemoteTotalPrice = null;
@@ -41,6 +44,7 @@ export class UIService {
         this.state.driveCordTotalPrice = null;
         this.state.driveGrandTotal = null;
         
+        // [NEW] These summary properties are the new single source of truth for K5 and F2.
         this.state.summaryWinderPrice = null;
         this.state.summaryMotorPrice = null;
         this.state.summaryRemotePrice = null;
@@ -48,7 +52,6 @@ export class UIService {
         this.state.summaryCordPrice = null;
         this.state.summaryAccessoriesTotal = null;
         
-        // [NEW] Add state to store the selected remote control's COST key
         this.state.driveSelectedRemoteCostKey = null;
     }
 
@@ -260,7 +263,6 @@ export class UIService {
         }
     }
     
-    // [NEW] Add setter for the new remote cost type key
     setDriveSelectedRemoteCostKey(key) {
         this.state.driveSelectedRemoteCostKey = key;
     }

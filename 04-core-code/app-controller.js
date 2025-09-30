@@ -108,7 +108,8 @@ export class AppController {
     }
 
     _subscribeF2Events() {
-        this.eventAggregator.subscribe('f2TabActivated', () => this._calculateF2Summary());
+        // [REFACTORED] Renamed event for clarity
+        this.eventAggregator.subscribe('f2TabActivated', () => this._handleF2TabActivation());
         this.eventAggregator.subscribe('f2ValueChanged', (data) => this._handleF2ValueChange(data));
         this.eventAggregator.subscribe('f2InputEnterPressed', (data) => this._focusNextF2Input(data.id));
         this.eventAggregator.subscribe('toggleFeeExclusion', (data) => this._handleToggleFeeExclusion(data));
@@ -138,7 +139,6 @@ export class AppController {
             [{ type: 'button', text: '取消', className: 'secondary', callback: () => this._cancelRemoteSelection() }]
         ];
         this.eventAggregator.publish('showConfirmationDialog', {
-            // [MODIFIED] Translated message to English
             message: 'Which model of remote control would you like to use?',
             layout: layout
         });
@@ -151,7 +151,6 @@ export class AppController {
             [{ type: 'button', text: '取消', className: 'secondary', callback: () => this._cancelRemoteSelection() }]
         ];
         this.eventAggregator.publish('showConfirmationDialog', {
-            // [MODIFIED] Translated message to English
             message: 'Which model of remote control would you like to use?',
             layout: layout
         });
@@ -169,7 +168,6 @@ export class AppController {
                 [{ type: 'button', text: '取消', className: 'secondary', callback: () => this._cancelRemoteSelection() }]
             ];
             this.eventAggregator.publish('showConfirmationDialog', {
-                // [MODIFIED] Translated message to English
                 message: 'Which brand of remote control would you like to use?',
                 layout: layout
             });
@@ -209,15 +207,31 @@ export class AppController {
         }
     }
     
-    _calculateF2Summary() {
-        const productStrategy = this.quickQuoteView.productFactory.getProductStrategy('rollerBlind');
+    // [HOTFIX] Central handler for when the F2 tab is activated.
+    _handleF2TabActivation() {
+        // Step 1: Force recalculation of all dependencies to ensure data is fresh.
+        const productStrategy = this.productFactory.getProductStrategy(this.quoteService.getCurrentProductType());
         const { updatedQuoteData } = this.calculationService.calculateAndSum(this.quoteService.getQuoteData(), productStrategy);
-        this.quoteService.quoteData = updatedQuoteData;
-        const totalSumFromQuickQuote = updatedQuoteData.summary.totalSum || 0;
-
+        this.quoteService.quoteData = updatedQuoteData; // Update the master data
+        
+        // Force accessory views to recalculate and, critically, update the UI service state.
         this.detailConfigView.driveAccessoriesView.recalculateAllDriveAccessoryPrices();
         this.detailConfigView.dualChainView.recalculateDualPrice();
+
+        // Step 2: Now that all dependencies are fresh, run the F2 summary calculation.
+        this._calculateF2Summary();
         
+        // Step 3: Set focus on the first input field as per the spec.
+        this.eventAggregator.publish('focusElement', { elementId: 'f2-b10-wifi-qty' });
+    }
+
+    // [HOTFIX] This function now assumes its dependencies have been refreshed.
+    _calculateF2Summary() {
+        // [REFACTORED] Get the single source of truth for the RB sum from the nested product summary.
+        const currentProductKey = this.quoteService.getQuoteData().currentProduct;
+        const productSummary = this.quoteService.getQuoteData().products[currentProductKey].summary;
+        const totalSumFromQuickQuote = productSummary.totalSum || 0;
+
         const uiState = this.uiService.getState();
         this.uiService.setF2Value('totalSumForRbTime', totalSumFromQuickQuote);
 
@@ -228,7 +242,8 @@ export class AppController {
             install: 20,
             removal: 20
         };
-
+        
+        // [HOTFIX] Read accessory prices from the reliable, updated summary state in uiService.
         const winderPrice = uiState.summaryWinderPrice || 0;
         const dualPrice = uiState.dualPrice || 0;
         const motorPrice = uiState.summaryMotorPrice || 0;
@@ -342,6 +357,7 @@ export class AppController {
     _handleAutoSave() {
         try {
             const items = this.quoteService.getItems();
+            if (!items) return; // Guard against undefined items during initialization
             const hasContent = items.length > 1 || (items.length === 1 && (items[0].width || items[0].height));
             if (hasContent) {
                 const dataToSave = JSON.stringify(this.quoteService.getQuoteData());

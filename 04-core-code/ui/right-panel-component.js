@@ -125,7 +125,7 @@ export class RightPanelComponent {
         const formatDecimalCurrency = (value) => (typeof value === 'number') ? `$${value.toFixed(2)}` : '$';
         const formatValue = (value) => (value !== null && value !== undefined) ? value : '';
 
-        // Render values from main UI state (formatted as integers)
+        // [HOTFIX] These values now come from the generic summary state properties, which are the new single source of truth.
         this.f2.b2_winderPrice.textContent = formatIntegerCurrency(uiState.summaryWinderPrice);
         this.f2.b3_dualPrice.textContent = formatIntegerCurrency(uiState.dualPrice);
         this.f2.b6_motorPrice.textContent = formatIntegerCurrency(uiState.summaryMotorPrice);
@@ -153,13 +153,14 @@ export class RightPanelComponent {
         this.f2.b24_gst.textContent = formatDecimalCurrency(f2State.gst);
         this.f2.b25_netprofit.textContent = formatDecimalCurrency(f2State.netProfit);
 
-        // Update input values from state
-        this.f2.b10_wifiQty.value = formatValue(f2State.wifiQty);
-        this.f2.b13_deliveryQty.value = formatValue(f2State.deliveryQty);
-        this.f2.b14_installQty.value = formatValue(f2State.installQty);
-        this.f2.b15_removalQty.value = formatValue(f2State.removalQty);
-        this.f2.b17_mulTimes.value = formatValue(f2State.mulTimes);
-        this.f2.b18_discount.value = formatValue(f2State.discount);
+        // Update input values from state, ensuring not to overwrite during user input.
+        if (document.activeElement !== this.f2.b10_wifiQty) this.f2.b10_wifiQty.value = formatValue(f2State.wifiQty);
+        if (document.activeElement !== this.f2.b13_deliveryQty) this.f2.b13_deliveryQty.value = formatValue(f2State.deliveryQty);
+        if (document.activeElement !== this.f2.b14_installQty) this.f2.b14_installQty.value = formatValue(f2State.installQty);
+        if (document.activeElement !== this.f2.b15_removalQty) this.f2.b15_removalQty.value = formatValue(f2State.removalQty);
+        if (document.activeElement !== this.f2.b17_mulTimes) this.f2.b17_mulTimes.value = formatValue(f2State.mulTimes);
+        if (document.activeElement !== this.f2.b18_discount) this.f2.b18_discount.value = formatValue(f2State.discount);
+
 
         // Apply strikethrough class based on state
         this.f2.c13_deliveryFee.classList.toggle('is-excluded', f2State.deliveryFeeExcluded);

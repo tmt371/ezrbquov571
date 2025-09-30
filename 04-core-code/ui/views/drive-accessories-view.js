@@ -39,6 +39,7 @@ export class DriveAccessoriesView {
                     this._calculateAndStoreCordCost();
                     break;
             }
+            // [REFACTORED] Recalculate and update all prices upon exiting any mode.
             this.recalculateAllDriveAccessoryPrices();
         }
         
@@ -143,9 +144,11 @@ export class DriveAccessoriesView {
             if (item.motor) {
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: '該捲簾已經設定為電動，確定要改為HD？',
-                    buttons: [
-                        { text: '確定', callback: () => this._toggleWinder(rowIndex, true) },
-                        { text: '取消', className: 'secondary', callback: () => {} }
+                    layout: [
+                        [
+                            { type: 'button', text: '確定', callback: () => this._toggleWinder(rowIndex, true) },
+                            { type: 'button', text: '取消', className: 'secondary', callback: () => {} }
+                        ]
                     ]
                 });
             } else {
@@ -155,9 +158,11 @@ export class DriveAccessoriesView {
             if (item.winder) {
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: '該捲簾已經設定為HD，確定要改為電動？',
-                    buttons: [
-                        { text: '確定', callback: () => this._toggleMotor(rowIndex, true) },
-                        { text: '取消', className: 'secondary', callback: () => {} }
+                    layout: [
+                        [
+                            { type: 'button', text: '確定', callback: () => this._toggleMotor(rowIndex, true) },
+                            { type: 'button', text: '取消', className: 'secondary', callback: () => {} }
+                        ]
                     ]
                 });
             } else {
@@ -183,12 +188,14 @@ export class DriveAccessoriesView {
                 const accessoryName = accessory === 'remote' ? '遙控器' : '充電器';
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: `系統偵測到有電動馬達，確定不要${accessoryName}？`,
-                    buttons: [
-                        { text: '確定不要', callback: () => {
-                            this.uiService.setDriveAccessoryCount(accessory, 0);
-                            this.publish();
-                        }},
-                        { text: '取消', className: 'secondary', callback: () => {} }
+                    layout: [
+                        [
+                            { type: 'button', text: '確定不要', callback: () => {
+                                this.uiService.setDriveAccessoryCount(accessory, 0);
+                                this.publish();
+                            }},
+                            { type: 'button', text: '取消', className: 'secondary', callback: () => {} }
+                        ]
                     ]
                 });
                 return; 
@@ -220,14 +227,12 @@ export class DriveAccessoriesView {
         const summaryData = {};
         let grandTotal = 0;
 
-        // [MODIFIED] Calculate count here and pass it to the service to align with the new strategy
         const winderCount = items.filter(item => item.winder === 'HD').length;
         const winderPrice = this.calculationService.calculateAccessoryPrice(productType, 'winder', { count: winderCount });
         this.uiService.setDriveAccessoryTotalPrice('winder', winderPrice);
         summaryData.winder = { count: winderCount, price: winderPrice };
         grandTotal += winderPrice;
 
-        // [MODIFIED] Calculate count here and pass it to the service to align with the new strategy
         const motorCount = items.filter(item => !!item.motor).length;
         const motorPrice = this.calculationService.calculateAccessoryPrice(productType, 'motor', { count: motorCount });
         this.uiService.setDriveAccessoryTotalPrice('motor', motorPrice);
@@ -256,6 +261,13 @@ export class DriveAccessoriesView {
 
         this.uiService.setDriveGrandTotal(grandTotal);
         this.quoteService.updateAccessorySummary(summaryData);
+        
+        // [HOTFIX] Feed the calculated prices back into the general summary state for F2 to use.
+        this.uiService.setSummaryWinderPrice(winderPrice);
+        this.uiService.setSummaryMotorPrice(motorPrice);
+        this.uiService.setSummaryRemotePrice(remotePrice);
+        this.uiService.setSummaryChargerPrice(chargerPrice);
+        this.uiService.setSummaryCordPrice(cordPrice);
     }
 
     _getHintMessage(mode) {
