@@ -26,19 +26,12 @@ import { DriveAccessoriesView } from './ui/views/drive-accessories-view.js';
 
 const AUTOSAVE_STORAGE_KEY = 'quoteAutoSaveData';
 
-/**
- * [NEW] A migration function to convert old auto-saved data to the new structure.
- * @param {object} oldData - The auto-saved data object (potentially in the old format).
- * @returns {object} The data in the new, generic product structure.
- */
 const migrateAutoSaveData = (oldData) => {
-    // If the data already has the new structure, do nothing.
     if (oldData && oldData.products && oldData.currentProduct) {
         console.log("Auto-saved data is already in the new format.");
         return oldData;
     }
 
-    // If it's the old structure (has rollerBlindItems at the root), migrate it.
     if (oldData && oldData.rollerBlindItems) {
         console.warn("Migrating legacy auto-saved data to the new format...");
         const newData = {
@@ -49,7 +42,6 @@ const migrateAutoSaveData = (oldData) => {
                     summary: oldData.summary || initialState.quoteData.products.rollerBlind.summary
                 }
             },
-            // Copy over other global properties
             quoteId: oldData.quoteId || null,
             issueDate: oldData.issueDate || null,
             dueDate: oldData.dueDate || null,
@@ -60,7 +52,6 @@ const migrateAutoSaveData = (oldData) => {
         return newData;
     }
 
-    // If data is invalid or doesn't match either structure, return null.
     return null;
 };
 
@@ -74,8 +65,6 @@ class App {
                 const message = "It looks like you have unsaved work from a previous session.\n\n- 'OK' to restore the unsaved work.\n- 'Cancel' to start a new, blank quote.";
                 if (window.confirm(message)) {
                     let autoSavedData = JSON.parse(autoSavedDataJSON);
-
-                    // [NEW] Run the migration function on the loaded data.
                     const migratedData = migrateAutoSaveData(autoSavedData);
 
                     if (migratedData) {
@@ -105,7 +94,7 @@ class App {
             initialState: startingState,
             productFactory: productFactory,
             configManager: this.configManager,
-            initialState: startingState // Pass the full initial state for reset functionality
+            initialState: startingState
         });
         const calculationService = new CalculationService({
             productFactory: productFactory,
@@ -187,7 +176,8 @@ class App {
             fileService,
             quickQuoteView,
             detailConfigView,
-            calculationService
+            calculationService,
+            productFactory // [HOTFIX] Injected the missing productFactory dependency.
         });
     }
 

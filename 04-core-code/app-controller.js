@@ -6,7 +6,8 @@ const AUTOSAVE_STORAGE_KEY = 'quoteAutoSaveData';
 const AUTOSAVE_INTERVAL_MS = 60000;
 
 export class AppController {
-    constructor({ eventAggregator, uiService, quoteService, fileService, quickQuoteView, detailConfigView, calculationService }) {
+    // [HOTFIX] Added 'productFactory' to the constructor dependencies.
+    constructor({ eventAggregator, uiService, quoteService, fileService, quickQuoteView, detailConfigView, calculationService, productFactory }) {
         this.eventAggregator = eventAggregator;
         this.uiService = uiService;
         this.quoteService = quoteService;
@@ -14,6 +15,7 @@ export class AppController {
         this.quickQuoteView = quickQuoteView;
         this.detailConfigView = detailConfigView;
         this.calculationService = calculationService;
+        this.productFactory = productFactory; // [HOTFIX] Store the injected dependency.
 
         this.f2InputSequence = [
             'f2-b10-wifi-qty', 'f2-b13-delivery-qty', 'f2-b14-install-qty',
@@ -108,7 +110,6 @@ export class AppController {
     }
 
     _subscribeF2Events() {
-        // [REFACTORED] Renamed event for clarity
         this.eventAggregator.subscribe('f2TabActivated', () => this._handleF2TabActivation());
         this.eventAggregator.subscribe('f2ValueChanged', (data) => this._handleF2ValueChange(data));
         this.eventAggregator.subscribe('f2InputEnterPressed', (data) => this._focusNextF2Input(data.id));
@@ -207,27 +208,20 @@ export class AppController {
         }
     }
     
-    // [HOTFIX] Central handler for when the F2 tab is activated.
     _handleF2TabActivation() {
-        // Step 1: Force recalculation of all dependencies to ensure data is fresh.
         const productStrategy = this.productFactory.getProductStrategy(this.quoteService.getCurrentProductType());
         const { updatedQuoteData } = this.calculationService.calculateAndSum(this.quoteService.getQuoteData(), productStrategy);
-        this.quoteService.quoteData = updatedQuoteData; // Update the master data
+        this.quoteService.quoteData = updatedQuoteData;
         
-        // Force accessory views to recalculate and, critically, update the UI service state.
         this.detailConfigView.driveAccessoriesView.recalculateAllDriveAccessoryPrices();
         this.detailConfigView.dualChainView.recalculateDualPrice();
 
-        // Step 2: Now that all dependencies are fresh, run the F2 summary calculation.
         this._calculateF2Summary();
         
-        // Step 3: Set focus on the first input field as per the spec.
         this.eventAggregator.publish('focusElement', { elementId: 'f2-b10-wifi-qty' });
     }
 
-    // [HOTFIX] This function now assumes its dependencies have been refreshed.
     _calculateF2Summary() {
-        // [REFACTORED] Get the single source of truth for the RB sum from the nested product summary.
         const currentProductKey = this.quoteService.getQuoteData().currentProduct;
         const productSummary = this.quoteService.getQuoteData().products[currentProductKey].summary;
         const totalSumFromQuickQuote = productSummary.totalSum || 0;
@@ -243,7 +237,6 @@ export class AppController {
             removal: 20
         };
         
-        // [HOTFIX] Read accessory prices from the reliable, updated summary state in uiService.
         const winderPrice = uiState.summaryWinderPrice || 0;
         const dualPrice = uiState.dualPrice || 0;
         const motorPrice = uiState.summaryMotorPrice || 0;
@@ -357,7 +350,7 @@ export class AppController {
     _handleAutoSave() {
         try {
             const items = this.quoteService.getItems();
-            if (!items) return; // Guard against undefined items during initialization
+            if (!items) return;
             const hasContent = items.length > 1 || (items.length === 1 && (items[0].width || items[0].height));
             if (hasContent) {
                 const dataToSave = JSON.stringify(this.quoteService.getQuoteData());
