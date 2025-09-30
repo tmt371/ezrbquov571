@@ -156,16 +156,11 @@ export class LeftPanelInputHandler {
         const setupK5ModeButton = (buttonId, mode) => {
             const button = document.getElementById(buttonId);
             if (button) {
-                // [MODIFIED] Special handling for the remote button to trigger a dialog flow
-                if (buttonId === 'btn-k5-remote') {
-                    button.addEventListener('click', () => {
-                        this.eventAggregator.publish('userInitiatedRemoteSelection');
-                    });
-                } else {
-                    button.addEventListener('click', () => {
-                        this.eventAggregator.publish('driveModeChanged', { mode });
-                    });
-                }
+                // [REFACTOR] Removed special handling for the remote button.
+                // It now fires a standard 'driveModeChanged' event, same as other accessory buttons.
+                button.addEventListener('click', () => {
+                    this.eventAggregator.publish('driveModeChanged', { mode });
+                });
             }
         };
         setupK5ModeButton('btn-k5-winder', 'winder');

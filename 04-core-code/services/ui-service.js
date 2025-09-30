@@ -21,7 +21,7 @@ export class UIService {
         this.state.dualChainInputValue = '';
         this.state.dualPrice = null;
 
-        this.state.welcomeDialogShown = false; // Add new state flag
+        this.state.welcomeDialogShown = false;
 
         this._initializeDriveAccessoryState();
         this._initializeF2SummaryState();
@@ -35,8 +35,6 @@ export class UIService {
         this.state.driveChargerCount = 0;
         this.state.driveCordCount = 0;
         
-        // [REFACTORED] These properties are no longer the single source of truth for F2.
-        // They are specific to the K4 UI.
         this.state.driveWinderTotalPrice = null;
         this.state.driveMotorTotalPrice = null;
         this.state.driveRemoteTotalPrice = null;
@@ -44,7 +42,6 @@ export class UIService {
         this.state.driveCordTotalPrice = null;
         this.state.driveGrandTotal = null;
         
-        // [NEW] These summary properties are the new single source of truth for K5 and F2.
         this.state.summaryWinderPrice = null;
         this.state.summaryMotorPrice = null;
         this.state.summaryRemotePrice = null;
@@ -52,7 +49,8 @@ export class UIService {
         this.state.summaryCordPrice = null;
         this.state.summaryAccessoriesTotal = null;
         
-        this.state.driveSelectedRemoteCostKey = null;
+        // [REMOVED] This state is no longer needed after simplifying the remote selection flow.
+        // this.state.driveSelectedRemoteCostKey = null;
     }
 
     _initializeF2SummaryState() {
@@ -113,7 +111,7 @@ export class UIService {
         this.state.dualChainInputValue = '';
         this.state.dualPrice = null;
 
-        this.state.welcomeDialogShown = false; // Also reset flag
+        this.state.welcomeDialogShown = false;
 
         this._initializeDriveAccessoryState();
         this._initializeF2SummaryState();
@@ -263,9 +261,10 @@ export class UIService {
         }
     }
     
-    setDriveSelectedRemoteCostKey(key) {
-        this.state.driveSelectedRemoteCostKey = key;
-    }
+    // [REMOVED] This setter is no longer needed.
+    // setDriveSelectedRemoteCostKey(key) {
+    //     this.state.driveSelectedRemoteCostKey = key;
+    // }
 
     setDriveAccessoryTotalPrice(accessory, price) {
         switch(accessory) {

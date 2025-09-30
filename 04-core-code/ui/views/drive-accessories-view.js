@@ -39,7 +39,6 @@ export class DriveAccessoriesView {
                     this._calculateAndStoreCordCost();
                     break;
             }
-            // [REFACTORED] Recalculate and update all prices upon exiting any mode.
             this.recalculateAllDriveAccessoryPrices();
         }
         
@@ -85,14 +84,16 @@ export class DriveAccessoriesView {
 
     _calculateAndStoreRemoteCost() {
         const state = this.uiService.getState();
-        const remoteCostKey = state.driveSelectedRemoteCostKey;
         const remoteCount = state.driveRemoteCount;
+        
+        // [REFACTOR] Since the user no longer selects a specific remote, use a hardcoded default for cost calculation.
+        const defaultRemoteCostKey = 'cost-A-1ch-remote';
 
-        if (remoteCostKey && remoteCount > 0) {
+        if (remoteCount > 0) {
             const totalCost = this.calculationService.calculateAccessoryPrice(
                 this.quoteService.getCurrentProductType(),
                 'remote',
-                { count: remoteCount, costKey: remoteCostKey }
+                { count: remoteCount, costKey: defaultRemoteCostKey }
             );
             this.quoteService.updateRemoteCostSum(totalCost);
         } else {
@@ -142,6 +143,7 @@ export class DriveAccessoriesView {
 
         if (isActivatingWinder) {
             if (item.motor) {
+                // [BUGFIX] Corrected dialog configuration to use 'layout' property instead of obsolete 'buttons'.
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: '該捲簾已經設定為電動，確定要改為HD？',
                     layout: [
@@ -156,6 +158,7 @@ export class DriveAccessoriesView {
             }
         } else if (isActivatingMotor) {
             if (item.winder) {
+                // [BUGFIX] Corrected dialog configuration to use 'layout' property instead of obsolete 'buttons'.
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: '該捲簾已經設定為HD，確定要改為電動？',
                     layout: [
@@ -186,6 +189,7 @@ export class DriveAccessoriesView {
             const hasMotor = items.some(item => !!item.motor);
             if (hasMotor && (accessory === 'remote' || accessory === 'charger')) {
                 const accessoryName = accessory === 'remote' ? '遙控器' : '充電器';
+                // [BUGFIX] Corrected dialog configuration to use 'layout' property.
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: `系統偵測到有電動馬達，確定不要${accessoryName}？`,
                     layout: [
@@ -262,7 +266,6 @@ export class DriveAccessoriesView {
         this.uiService.setDriveGrandTotal(grandTotal);
         this.quoteService.updateAccessorySummary(summaryData);
         
-        // [HOTFIX] Feed the calculated prices back into the general summary state for F2 to use.
         this.uiService.setSummaryWinderPrice(winderPrice);
         this.uiService.setSummaryMotorPrice(motorPrice);
         this.uiService.setSummaryRemotePrice(remotePrice);

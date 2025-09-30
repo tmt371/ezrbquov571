@@ -6,7 +6,6 @@ const AUTOSAVE_STORAGE_KEY = 'quoteAutoSaveData';
 const AUTOSAVE_INTERVAL_MS = 60000;
 
 export class AppController {
-    // [HOTFIX] Added 'productFactory' to the constructor dependencies.
     constructor({ eventAggregator, uiService, quoteService, fileService, quickQuoteView, detailConfigView, calculationService, productFactory }) {
         this.eventAggregator = eventAggregator;
         this.uiService = uiService;
@@ -15,7 +14,7 @@ export class AppController {
         this.quickQuoteView = quickQuoteView;
         this.detailConfigView = detailConfigView;
         this.calculationService = calculationService;
-        this.productFactory = productFactory; // [HOTFIX] Store the injected dependency.
+        this.productFactory = productFactory;
 
         this.f2InputSequence = [
             'f2-b10-wifi-qty', 'f2-b13-delivery-qty', 'f2-b14-install-qty',
@@ -95,7 +94,8 @@ export class AppController {
         this.eventAggregator.subscribe('driveModeChanged', (data) => delegate('handleDriveModeChange', data));
         this.eventAggregator.subscribe('accessoryCounterChanged', (data) => delegate('handleAccessoryCounterChange', data));
 
-        this.eventAggregator.subscribe('userInitiatedRemoteSelection', () => this._handleRemoteSelection());
+        // [REMOVED] The subscription for the complex remote selection flow is no longer needed.
+        // this.eventAggregator.subscribe('userInitiatedRemoteSelection', () => this._handleRemoteSelection());
     }
 
     _subscribeGlobalEvents() {
@@ -120,60 +120,12 @@ export class AppController {
         this.quoteService.setCostDiscount(percentage);
     }
     
-    _cancelRemoteSelection() {
-        this.uiService.setDriveAccessoryMode(null);
-        this.uiService.setDriveSelectedRemoteCostKey(null);
-        this._publishStateChange();
-    }
-
-    _setSelectedRemoteAndActivate(costKey) {
-        this.uiService.setDriveSelectedRemoteCostKey(costKey);
-        this.detailConfigView.handleDriveModeChange({ mode: 'remote' });
-        this._publishStateChange();
-    }
-    
-    _showAlphaRemoteDialog() {
-        const layout = [
-            [{ type: 'button', text: '1CH', callback: () => this._setSelectedRemoteAndActivate('cost-A-1ch-remote') }],
-            [{ type: 'button', text: '4CH', callback: () => this._setSelectedRemoteAndActivate('cost-A-4ch-remote') }],
-            [{ type: 'button', text: '16CH', callback: () => this._setSelectedRemoteAndActivate('cost-A-16ch-remote') }],
-            [{ type: 'button', text: '取消', className: 'secondary', callback: () => this._cancelRemoteSelection() }]
-        ];
-        this.eventAggregator.publish('showConfirmationDialog', {
-            message: 'Which model of remote control would you like to use?',
-            layout: layout
-        });
-    }
-
-    _showLinxRemoteDialog() {
-        const layout = [
-            [{ type: 'button', text: '1CH', callback: () => this._setSelectedRemoteAndActivate('cost-L-1ch-remote') }],
-            [{ type: 'button', text: '16CH', callback: () => this._setSelectedRemoteAndActivate('cost-L-16ch-remote') }],
-            [{ type: 'button', text: '取消', className: 'secondary', callback: () => this._cancelRemoteSelection() }]
-        ];
-        this.eventAggregator.publish('showConfirmationDialog', {
-            message: 'Which model of remote control would you like to use?',
-            layout: layout
-        });
-    }
-
-    _handleRemoteSelection() {
-        const currentMode = this.uiService.getState().driveAccessoryMode;
-
-        if (currentMode === 'remote') {
-            this.detailConfigView.handleDriveModeChange({ mode: 'remote' });
-        } else {
-            const layout = [
-                [{ type: 'button', text: 'Alpha', callback: () => this._showAlphaRemoteDialog(), closeOnClick: false }],
-                [{ type: 'button', text: 'Linx', callback: () => this._showLinxRemoteDialog(), closeOnClick: false }],
-                [{ type: 'button', text: '取消', className: 'secondary', callback: () => this._cancelRemoteSelection() }]
-            ];
-            this.eventAggregator.publish('showConfirmationDialog', {
-                message: 'Which brand of remote control would you like to use?',
-                layout: layout
-            });
-        }
-    }
+    // [REMOVED] All methods related to the multi-step remote selection dialog are now obsolete and have been removed.
+    // _cancelRemoteSelection() { ... }
+    // _setSelectedRemoteAndActivate(costKey) { ... }
+    // _showAlphaRemoteDialog() { ... }
+    // _showLinxRemoteDialog() { ... }
+    // _handleRemoteSelection() { ... }
 
     _handleToggleFeeExclusion({ feeType }) {
         this.uiService.toggleF2FeeExclusion(feeType);
