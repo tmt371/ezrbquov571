@@ -129,7 +129,7 @@ export class AppController {
 
     _handleToggleFeeExclusion({ feeType }) {
         this.uiService.toggleF2FeeExclusion(feeType);
-        this._calculateF2Summary();
+        this._triggerF2CalculationAndUpdateUI();
     }
 
     _handleF2ValueChange({ id, value }) {
@@ -147,7 +147,7 @@ export class AppController {
 
         if (keyToUpdate) {
             this.uiService.setF2Value(keyToUpdate, numericValue);
-            this._calculateF2Summary();
+            this._triggerF2CalculationAndUpdateUI();
         }
     }
 
@@ -168,70 +168,28 @@ export class AppController {
         this.detailConfigView.driveAccessoriesView.recalculateAllDriveAccessoryPrices();
         this.detailConfigView.dualChainView.recalculateDualPrice();
 
-        this._calculateF2Summary();
+        this._triggerF2CalculationAndUpdateUI();
         
         this.eventAggregator.publish('focusElement', { elementId: 'f2-b10-wifi-qty' });
     }
 
-    _calculateF2Summary() {
-        const currentProductKey = this.quoteService.getQuoteData().currentProduct;
-        const productSummary = this.quoteService.getQuoteData().products[currentProductKey].summary;
-        const totalSumFromQuickQuote = productSummary.totalSum || 0;
-
+    /**
+     * [NEW] Triggers the centralized F2 calculation and updates the UI.
+     * This method orchestrates the call to the calculation service and
+     * the subsequent UI update, keeping the controller clean.
+     * @private
+     */
+    _triggerF2CalculationAndUpdateUI() {
+        const quoteData = this.quoteService.getQuoteData();
         const uiState = this.uiService.getState();
-        this.uiService.setF2Value('totalSumForRbTime', totalSumFromQuickQuote);
-
-        const f2State = uiState.f2;
-        const UNIT_PRICES = {
-            wifi: 200,
-            delivery: 100,
-            install: 20,
-            removal: 20
-        };
         
-        const winderPrice = uiState.summaryWinderPrice || 0;
-        const dualPrice = uiState.dualPrice || 0;
-        const motorPrice = uiState.summaryMotorPrice || 0;
-        const remotePrice = uiState.summaryRemotePrice || 0;
-        const chargerPrice = uiState.summaryChargerPrice || 0;
-        const cordPrice = uiState.summaryCordPrice || 0;
+        const summary = this.calculationService.calculateFinancialSummary(quoteData, uiState);
 
-        const wifiQty = f2State.wifiQty || 0;
-        const deliveryQty = f2State.deliveryQty || 0;
-        const installQty = f2State.installQty || 0;
-        const removalQty = f2State.removalQty || 0;
-        const mulTimes = f2State.mulTimes || 0;
-        const discount = f2State.discount || 0;
+        // Update all F2 values in the UI service in one go
+        for (const key in summary) {
+            this.uiService.setF2Value(key, summary[key]);
+        }
 
-        const wifiSum = wifiQty * UNIT_PRICES.wifi;
-        const deliveryFee = deliveryQty * UNIT_PRICES.delivery;
-        const installFee = installQty * UNIT_PRICES.install;
-        const removalFee = removalQty * UNIT_PRICES.removal;
-
-        const acceSum = winderPrice + dualPrice;
-        const eAcceSum = motorPrice + remotePrice + chargerPrice + cordPrice + wifiSum;
-        const surchargeFee = 
-            (f2State.deliveryFeeExcluded ? 0 : deliveryFee) +
-            (f2State.installFeeExcluded ? 0 : installFee) +
-            (f2State.removalFeeExcluded ? 0 : removalFee);
-        
-        const firstRbPrice = totalSumFromQuickQuote * mulTimes;
-        const disRbPriceValue = firstRbPrice * (1 - (discount / 100));
-        const disRbPrice = Math.round(disRbPriceValue * 100) / 100;
-        
-        const sumPrice = acceSum + eAcceSum + surchargeFee + disRbPrice;
-
-        this.uiService.setF2Value('wifiSum', wifiSum);
-        this.uiService.setF2Value('deliveryFee', deliveryFee);
-        this.uiService.setF2Value('installFee', installFee);
-        this.uiService.setF2Value('removalFee', removalFee);
-        this.uiService.setF2Value('acceSum', acceSum);
-        this.uiService.setF2Value('eAcceSum', eAcceSum);
-        this.uiService.setF2Value('surchargeFee', surchargeFee);
-        this.uiService.setF2Value('firstRbPrice', firstRbPrice);
-        this.uiService.setF2Value('disRbPrice', disRbPrice);
-        this.uiService.setF2Value('sumPrice', sumPrice);
-        
         this._publishStateChange();
     }
     
