@@ -185,7 +185,6 @@ export class InputHandler {
     _setupTableInteraction() {
         const table = document.getElementById('results-table');
         if (table) {
-<<<<<<< HEAD
             const startPress = (e) => {
                 const target = e.target;
                 if (target.tagName === 'TD' && target.dataset.column === 'TYPE') {
@@ -193,24 +192,11 @@ export class InputHandler {
                     this.longPressTimer = setTimeout(() => {
                         this.isLongPress = true;
                         const rowIndex = target.parentElement.dataset.rowIndex;
-=======
-            let pressTarget = null;
-
-            const startPress = (e) => {
-                this.isLongPress = false;
-                pressTarget = e.target; // 記住滑鼠按下的目標
-                
-                if (pressTarget.tagName === 'TD' && pressTarget.dataset.column === 'TYPE') {
-                    this.longPressTimer = setTimeout(() => {
-                        this.isLongPress = true; // 只有計時器完成後，才判定為長按
-                        const rowIndex = pressTarget.parentElement.dataset.rowIndex;
->>>>>>> parent of d55bb8b (input-handler.js 安插追蹤碼)
                         this.eventAggregator.publish('typeCellLongPressed', { rowIndex: parseInt(rowIndex, 10) });
                     }, this.pressThreshold);
                 }
             };
             
-<<<<<<< HEAD
             const endPress = () => {
                 clearTimeout(this.longPressTimer);
             };
@@ -238,47 +224,6 @@ export class InputHandler {
                     }
                 }
             });
-=======
-            const endPress = (e) => {
-                clearTimeout(this.longPressTimer);
-                
-                // [BUGFIX] 最終修正：在 mouseup 事件中處理點擊邏輯
-                // 這樣可以確保在判斷是否為長按之後，再決定是否執行點擊動作
-                if (!this.isLongPress) {
-                    // 確保釋放滑鼠的目標與按下時是同一個，以模擬真實的 click 事件
-                    if (e.target === pressTarget && pressTarget.tagName === 'TD') {
-                        const column = pressTarget.dataset.column;
-                        const rowIndex = pressTarget.parentElement.dataset.rowIndex;
-                        if (column && rowIndex) {
-                            const eventData = { rowIndex: parseInt(rowIndex, 10), column };
-                            if (column === 'sequence') {
-                                this.eventAggregator.publish('sequenceCellClicked', eventData);
-                            } else {
-                                this.eventAggregator.publish('tableCellClicked', eventData);
-                            }
-                        }
-                    }
-                }
-                pressTarget = null; // 重置目標
-            };
-
-            table.addEventListener('mousedown', startPress);
-            table.addEventListener('touchstart', startPress, { passive: true });
-
-            // 重要的：mouseup 作為點擊事件的主要觸發點
-            table.addEventListener('mouseup', endPress);
-            table.addEventListener('touchend', endPress);
-            
-            // 當滑鼠移出表格時，取消所有待處理的點擊或長按動作
-            table.addEventListener('mouseleave', () => {
-                clearTimeout(this.longPressTimer);
-                pressTarget = null;
-                this.isLongPress = false;
-            }, true);
-
-            // [REMOVED] 移除獨立的 click 事件監聽器，避免競爭與衝突
-            // table.addEventListener('click', ...);
->>>>>>> parent of d55bb8b (input-handler.js 安插追蹤碼)
         }
     }
 }
