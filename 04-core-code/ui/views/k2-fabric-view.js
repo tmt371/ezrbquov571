@@ -29,9 +29,11 @@ export class K2FabricView {
             if (hasConflict) {
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: 'Some B2 items have Light-Filter settings. Continuing will overwrite this data. Proceed?',
-                    buttons: [
-                        { text: 'OK', callback: () => this._enterFCMode(true) },
-                        { text: 'Cancel', className: 'secondary', callback: () => {} }
+                    layout: [
+                        [
+                            { text: 'OK', callback: () => this._enterFCMode(true) },
+                            { text: 'Cancel', className: 'secondary', callback: () => {} }
+                        ]
                     ]
                 });
             } else {
@@ -119,10 +121,13 @@ export class K2FabricView {
                 }
             }
 
-            // [MODIFIED] Changed the selection rule from 'is not B2' to 'is B1'.
-            if (activeEditMode === 'K2_LF_SELECT' && item.fabricType === 'B1') {
-                this.eventAggregator.publish('showNotification', { message: 'Items with TYPE "B1" cannot be selected for this operation.', type: 'error' });
-                return;
+            // [MODIFIED] The selection rule is now expanded to include B2, B3, and B4.
+            if (activeEditMode === 'K2_LF_SELECT') {
+                const allowedTypes = ['B2', 'B3', 'B4'];
+                if (!allowedTypes.includes(item.fabricType)) {
+                    this.eventAggregator.publish('showNotification', { message: '只有布料樣式為 B2, B3, B4 的品項才能被選取。', type: 'error' });
+                    return;
+                }
             }
             this.uiService.toggleLFSelection(rowIndex);
             
@@ -140,7 +145,7 @@ export class K2FabricView {
             this._exitAllK2Modes();
         } else {
             this.uiService.setActiveEditMode('K2_LF_SELECT');
-            this.eventAggregator.publish('showNotification', { message: 'Please select the items with TYPE \'B2\' to edit the fabric name and color settings for the roller blinds.' });
+            this.eventAggregator.publish('showNotification', { message: '請點選要編輯的捲簾品項（可選取 B2, B3, B4）。' });
             this.publish();
         }
     }

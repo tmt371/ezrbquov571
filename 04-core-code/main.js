@@ -177,7 +177,7 @@ class App {
             quickQuoteView,
             detailConfigView,
             calculationService,
-            productFactory // [HOTFIX] Injected the missing productFactory dependency.
+            productFactory
         });
     }
 
@@ -226,6 +226,12 @@ class App {
 
         this.eventAggregator.subscribe('welcomeDialogConfirmed', () => {
             this.uiManager._adjustLeftPanelLayout();
+
+            // [NEW] Set focus to the main input display after the welcome dialog is dismissed.
+            const inputDisplayCell = document.getElementById('input-display-cell');
+            if (inputDisplayCell) {
+                inputDisplayCell.focus();
+            }
         });
         
         this.appController.publishInitialState(); 
