@@ -182,54 +182,60 @@ export class InputHandler {
     _setupTableInteraction() {
         const table = document.getElementById('results-table');
         if (table) {
+            let pressTarget = null;
+
             const startPress = (e) => {
-                // [BUGFIX] This flag MUST be reset at the start of every single press cycle,
-                // regardless of which cell is clicked. This was the root cause of the bug.
                 this.isLongPress = false;
+                pressTarget = e.target; // 記住滑鼠按下的目標
                 
-                const target = e.target;
-                // The long-press timer logic should only be set up for TYPE cells.
-                if (target.tagName === 'TD' && target.dataset.column === 'TYPE') {
+                if (pressTarget.tagName === 'TD' && pressTarget.dataset.column === 'TYPE') {
                     this.longPressTimer = setTimeout(() => {
-                        this.isLongPress = true;
-                        const rowIndex = target.parentElement.dataset.rowIndex;
+                        this.isLongPress = true; // 只有計時器完成後，才判定為長按
+                        const rowIndex = pressTarget.parentElement.dataset.rowIndex;
                         this.eventAggregator.publish('typeCellLongPressed', { rowIndex: parseInt(rowIndex, 10) });
                     }, this.pressThreshold);
                 }
             };
             
-            const endPress = () => {
+            const endPress = (e) => {
                 clearTimeout(this.longPressTimer);
+                
+                // [BUGFIX] 最終修正：在 mouseup 事件中處理點擊邏輯
+                // 這樣可以確保在判斷是否為長按之後，再決定是否執行點擊動作
+                if (!this.isLongPress) {
+                    // 確保釋放滑鼠的目標與按下時是同一個，以模擬真實的 click 事件
+                    if (e.target === pressTarget && pressTarget.tagName === 'TD') {
+                        const column = pressTarget.dataset.column;
+                        const rowIndex = pressTarget.parentElement.dataset.rowIndex;
+                        if (column && rowIndex) {
+                            const eventData = { rowIndex: parseInt(rowIndex, 10), column };
+                            if (column === 'sequence') {
+                                this.eventAggregator.publish('sequenceCellClicked', eventData);
+                            } else {
+                                this.eventAggregator.publish('tableCellClicked', eventData);
+                            }
+                        }
+                    }
+                }
+                pressTarget = null; // 重置目標
             };
 
             table.addEventListener('mousedown', startPress);
             table.addEventListener('touchstart', startPress, { passive: true });
+
+            // 重要的：mouseup 作為點擊事件的主要觸發點
             table.addEventListener('mouseup', endPress);
-            table.addEventListener('mouseleave', endPress, true);
             table.addEventListener('touchend', endPress);
+            
+            // 當滑鼠移出表格時，取消所有待處理的點擊或長按動作
+            table.addEventListener('mouseleave', () => {
+                clearTimeout(this.longPressTimer);
+                pressTarget = null;
+                this.isLongPress = false;
+            }, true);
 
-            table.addEventListener('click', (event) => {
-                if(this.isLongPress) {
-                    // Prevent the click event from firing after a long press has been determined.
-                    event.preventDefault();
-                    event.stopPropagation();
-                    return;
-                }
-
-                const target = event.target;
-                if (target.tagName === 'TD') {
-                    const column = target.dataset.column;
-                    const rowIndex = target.parentElement.dataset.rowIndex;
-                    if (column && rowIndex) {
-                         const eventData = { rowIndex: parseInt(rowIndex, 10), column };
-                        if (column === 'sequence') {
-                            this.eventAggregator.publish('sequenceCellClicked', eventData);
-                        } else {
-                            this.eventAggregator.publish('tableCellClicked', eventData);
-                        }
-                    }
-                }
-            });
+            // [REMOVED] 移除獨立的 click 事件監聽器，避免競爭與衝突
+            // table.addEventListener('click', ...);
         }
     }
 }
