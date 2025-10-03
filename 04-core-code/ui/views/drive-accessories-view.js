@@ -44,20 +44,12 @@ export class DriveAccessoriesView {
         
         this.uiService.setDriveAccessoryMode(newMode);
 
+        // [NEW] If entering remote mode and motors exist, default remote count to 1.
         if (newMode === 'remote') {
             const items = this.quoteService.getItems();
             const motorCount = items.filter(item => !!item.motor).length;
             if (motorCount > 0 && this.uiService.getState().driveRemoteCount === 0) {
                 this.uiService.setDriveAccessoryCount('remote', 1);
-            }
-        }
-
-        // [NEW] If entering charger mode and motors exist, default charger count to 1.
-        if (newMode === 'charger') {
-            const items = this.quoteService.getItems();
-            const motorCount = items.filter(item => !!item.motor).length;
-            if (motorCount > 0 && this.uiService.getState().driveChargerCount === 0) {
-                this.uiService.setDriveAccessoryCount('charger', 1);
             }
         }
 
@@ -198,6 +190,7 @@ export class DriveAccessoriesView {
         let currentCount = counts[accessory];
         const newCount = direction === 'add' ? currentCount + 1 : Math.max(0, currentCount - 1);
 
+        // [NEW] If reducing to 0, check for motors and show a warning.
         if (newCount === 0 && direction === 'subtract') {
             const items = this.quoteService.getItems();
             const hasMotor = items.some(item => !!item.motor);
