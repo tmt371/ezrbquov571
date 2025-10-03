@@ -24,6 +24,7 @@ export class InputHandler {
 
     _setupPhysicalKeyboard() {
         window.addEventListener('keydown', (event) => {
+            // BUG FIX: Broaden the guard clause to ignore all non-readonly inputs
             if (event.target.matches('input:not([readonly])')) {
                 return;
             }
@@ -109,6 +110,8 @@ export class InputHandler {
         setupButton('key-export', 'userRequestedExportCSV');
         setupButton('key-reset', 'userRequestedReset');
         setupButton('key-m-sel', 'userToggledMultiSelectMode');
+
+        // [NEW] Added event listener for the new T-Set button
         setupButton('key-t-set', 'userRequestedMultiTypeSet');
 
         const loadButton = document.getElementById('key-load');
@@ -183,12 +186,9 @@ export class InputHandler {
         const table = document.getElementById('results-table');
         if (table) {
             const startPress = (e) => {
-                // [BUGFIX] Reset the isLongPress flag on EVERY mousedown event.
-                // This prevents a previous long press from blocking subsequent single clicks.
-                this.isLongPress = false;
-                
                 const target = e.target;
                 if (target.tagName === 'TD' && target.dataset.column === 'TYPE') {
+                    this.isLongPress = false;
                     this.longPressTimer = setTimeout(() => {
                         this.isLongPress = true;
                         const rowIndex = target.parentElement.dataset.rowIndex;
