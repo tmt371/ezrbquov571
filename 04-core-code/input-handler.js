@@ -183,11 +183,12 @@ export class InputHandler {
         const table = document.getElementById('results-table');
         if (table) {
             const startPress = (e) => {
-                // [BUGFIX] Reset the isLongPress flag on EVERY mousedown event.
-                // This prevents a previous long press from blocking subsequent single clicks.
+                // [BUGFIX] This flag MUST be reset at the start of every single press cycle,
+                // regardless of which cell is clicked. This was the root cause of the bug.
                 this.isLongPress = false;
                 
                 const target = e.target;
+                // The long-press timer logic should only be set up for TYPE cells.
                 if (target.tagName === 'TD' && target.dataset.column === 'TYPE') {
                     this.longPressTimer = setTimeout(() => {
                         this.isLongPress = true;
@@ -208,7 +209,12 @@ export class InputHandler {
             table.addEventListener('touchend', endPress);
 
             table.addEventListener('click', (event) => {
-                if(this.isLongPress) return;
+                if(this.isLongPress) {
+                    // Prevent the click event from firing after a long press has been determined.
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
 
                 const target = event.target;
                 if (target.tagName === 'TD') {
