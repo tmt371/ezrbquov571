@@ -182,57 +182,61 @@ export class InputHandler {
     _setupTableInteraction() {
         const table = document.getElementById('results-table');
         if (table) {
-            console.log('--- [診斷] 正在設定表格互動事件監聽器 ---');
+            let pressTarget = null; // 用於儲存 mousedown/touchstart 的目標元素
 
             const startPress = (e) => {
-                console.log(`%c[診斷] ${e.type} 事件觸發`, 'color: blue', e.target);
                 this.isLongPress = false;
+                pressTarget = e.target; // 記住滑鼠/手指按下的目標
                 
-                const target = e.target;
-                if (target.tagName === 'TD' && target.dataset.column === 'TYPE') {
+                // 只針對 TYPE 欄位設定長按計時器
+                if (pressTarget.tagName === 'TD' && pressTarget.dataset.column === 'TYPE') {
                     this.longPressTimer = setTimeout(() => {
-                        console.log('%c[診斷] 長按計時器完成，設定 isLongPress = true', 'color: orange');
-                        this.isLongPress = true;
-                        const rowIndex = target.parentElement.dataset.rowIndex;
+                        this.isLongPress = true; // 計時器完成後，才判定為長按
+                        const rowIndex = pressTarget.parentElement.dataset.rowIndex;
                         this.eventAggregator.publish('typeCellLongPressed', { rowIndex: parseInt(rowIndex, 10) });
                     }, this.pressThreshold);
                 }
             };
             
             const endPress = (e) => {
-                console.log(`%c[診斷] ${e.type} 事件觸發`, 'color: green', e.target);
                 clearTimeout(this.longPressTimer);
-            };
-
-            const clickHandler = (e) => {
-                console.log(`%c[診斷] ${e.type} 事件觸發，檢查 isLongPress 旗標: ${this.isLongPress}`, 'color: purple', e.target);
-                if(this.isLongPress) {
-                    console.log('%c[診斷] isLongPress 為 true，攔截 click 事件！', 'color: red; font-weight: bold;');
-                    return;
-                }
                 
-                const target = e.target;
-                if (target.tagName === 'TD') {
-                    const column = target.dataset.column;
-                    const rowIndex = target.parentElement.dataset.rowIndex;
-                    if (column && rowIndex) {
-                        console.log(`[診斷] click 事件有效，準備發布業務事件... (Column: ${column})`);
-                        const eventData = { rowIndex: parseInt(rowIndex, 10), column };
-                        if (column === 'sequence') {
-                            this.eventAggregator.publish('sequenceCellClicked', eventData);
-                        } else {
-                            this.eventAggregator.publish('tableCellClicked', eventData);
+                // 在 mouseup/touchend 事件中處理所有「短按點擊」邏輯
+                if (!this.isLongPress) {
+                    // 確保釋放時的目標與按下時是同一個，以模擬真實的 click 行為
+                    if (e.target === pressTarget && pressTarget && pressTarget.tagName === 'TD') {
+                        const column = pressTarget.dataset.column;
+                        const rowIndex = pressTarget.parentElement.dataset.rowIndex;
+                        if (column && rowIndex) {
+                            const eventData = { rowIndex: parseInt(rowIndex, 10), column };
+                            if (column === 'sequence') {
+                                this.eventAggregator.publish('sequenceCellClicked', eventData);
+                            } else {
+                                this.eventAggregator.publish('tableCellClicked', eventData);
+                            }
                         }
                     }
                 }
+                pressTarget = null; // 重置目標，準備下一次點擊
             };
 
-            // 為了確保診斷的準確性，我們暫時恢復到 mousedown/mouseup/click 分離的模式
+            // 綁定開始與結束事件
             table.addEventListener('mousedown', startPress);
             table.addEventListener('touchstart', startPress, { passive: true });
             table.addEventListener('mouseup', endPress);
             table.addEventListener('touchend', endPress);
-            table.addEventListener('click', clickHandler);
+            
+            // 當滑鼠/手指移出表格區域時，取消所有待處理的點擊或長按動作
+            table.addEventListener('mouseleave', (e) => {
+                // 只在滑鼠按鍵還按著的情況下移出才取消
+                if (e.buttons === 1) {
+                    clearTimeout(this.longPressTimer);
+                    pressTarget = null;
+                    this.isLongPress = false;
+                }
+            });
+
+            // [REMOVED] 不再使用獨立的、不穩定的 click 事件監聽器
         }
     }
 }
