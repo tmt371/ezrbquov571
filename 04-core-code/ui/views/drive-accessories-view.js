@@ -44,15 +44,6 @@ export class DriveAccessoriesView {
         
         this.uiService.setDriveAccessoryMode(newMode);
 
-        // [NEW] If entering remote mode and motors exist, default remote count to 1.
-        if (newMode === 'remote') {
-            const items = this.quoteService.getItems();
-            const motorCount = items.filter(item => !!item.motor).length;
-            if (motorCount > 0 && this.uiService.getState().driveRemoteCount === 0) {
-                this.uiService.setDriveAccessoryCount('remote', 1);
-            }
-        }
-
         if (newMode) {
             const message = this._getHintMessage(newMode);
             this.eventAggregator.publish('showNotification', { message });
@@ -95,6 +86,7 @@ export class DriveAccessoriesView {
         const state = this.uiService.getState();
         const remoteCount = state.driveRemoteCount;
         
+        // [REFACTOR] Since the user no longer selects a specific remote, use a hardcoded default for cost calculation.
         const defaultRemoteCostKey = 'cost-A-1ch-remote';
 
         if (remoteCount > 0) {
@@ -151,6 +143,7 @@ export class DriveAccessoriesView {
 
         if (isActivatingWinder) {
             if (item.motor) {
+                // [BUGFIX] Corrected dialog configuration to use 'layout' property instead of obsolete 'buttons'.
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: '該捲簾已經設定為電動，確定要改為HD？',
                     layout: [
@@ -165,6 +158,7 @@ export class DriveAccessoriesView {
             }
         } else if (isActivatingMotor) {
             if (item.winder) {
+                // [BUGFIX] Corrected dialog configuration to use 'layout' property instead of obsolete 'buttons'.
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: '該捲簾已經設定為HD，確定要改為電動？',
                     layout: [
@@ -190,14 +184,14 @@ export class DriveAccessoriesView {
         let currentCount = counts[accessory];
         const newCount = direction === 'add' ? currentCount + 1 : Math.max(0, currentCount - 1);
 
-        // [NEW] If reducing to 0, check for motors and show a warning.
-        if (newCount === 0 && direction === 'subtract') {
+        if (newCount === 0) {
             const items = this.quoteService.getItems();
             const hasMotor = items.some(item => !!item.motor);
             if (hasMotor && (accessory === 'remote' || accessory === 'charger')) {
                 const accessoryName = accessory === 'remote' ? '遙控器' : '充電器';
+                // [BUGFIX] Corrected dialog configuration to use 'layout' property.
                 this.eventAggregator.publish('showConfirmationDialog', {
-                    message: `系統偵測到有電動馬達，您確定不要${accessoryName}嗎？`,
+                    message: `系統偵測到有電動馬達，確定不要${accessoryName}？`,
                     layout: [
                         [
                             { type: 'button', text: '確定不要', callback: () => {
