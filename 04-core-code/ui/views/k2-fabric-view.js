@@ -22,7 +22,6 @@ export class K2FabricView {
         if (newMode) {
             const items = this.quoteService.getItems();
             const { lfModifiedRowIndexes } = this.uiService.getState();
-            // [MODIFIED] Check for conflicts across all eligible types (B2, B3, B4).
             const eligibleTypes = ['B2', 'B3', 'B4'];
             const hasConflict = items.some((item, index) => 
                 eligibleTypes.includes(item.fabricType) && lfModifiedRowIndexes.has(index)
@@ -31,7 +30,7 @@ export class K2FabricView {
             if (hasConflict) {
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: 'Some eligible items (B2, B3, B4) have Light-Filter settings. Continuing will overwrite this data. Proceed?',
-                    closeOnOverlayClick: false, // [MODIFIED] Make this a modal dialog
+                    closeOnOverlayClick: false,
                     layout: [
                         [
                             { type: 'button', text: 'Continue', callback: () => this._enterFCMode(true) },
@@ -52,7 +51,6 @@ export class K2FabricView {
             const items = this.quoteService.getItems();
             const { lfModifiedRowIndexes } = this.uiService.getState();
             const indexesToClear = new Set();
-            // [MODIFIED] Clear existing settings from all eligible types.
             const eligibleTypes = ['B2', 'B3', 'B4'];
             items.forEach((item, index) => {
                 if (eligibleTypes.includes(item.fabricType) && lfModifiedRowIndexes.has(index)) {
@@ -126,7 +124,6 @@ export class K2FabricView {
                 }
             }
 
-            // [MODIFIED] Expanded selection rule to include B2, B3, and B4.
             const eligibleTypes = ['B2', 'B3', 'B4'];
             if (activeEditMode === 'K2_LF_SELECT' && !eligibleTypes.includes(item.fabricType)) {
                 this.eventAggregator.publish('showNotification', { message: 'Only items with TYPE "B2", "B3", or "B4" can be selected.', type: 'error' });
@@ -148,7 +145,6 @@ export class K2FabricView {
             this._exitAllK2Modes();
         } else {
             this.uiService.setActiveEditMode('K2_LF_SELECT');
-            // [MODIFIED] Updated hint message to include all eligible types.
             this.eventAggregator.publish('showNotification', { message: 'Please select items with TYPE \'B2\', \'B3\', or \'B4\' to edit.' });
             this.publish();
         }
@@ -223,8 +219,6 @@ export class K2FabricView {
                 const hasSelection = lfSelectedRowIndexes.size > 0;
                 input.disabled = !(isLFRow && hasSelection);
             });
-            // [FIX] Removed automatic focus setting to prevent interrupting multi-selection flow.
-            // The user can manually click the input field when ready.
         } else {
              allPanelInputs.forEach(input => {
                 input.disabled = true;

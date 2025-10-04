@@ -80,7 +80,8 @@ export class UIManager {
         // It will be modified internally to read from the new structure.
         this.leftPanelComponent.render(state.ui, state.quoteData);
         
-        this.rightPanelComponent.render(state.ui);
+        // [MODIFIED] Pass the full state object to the right panel component.
+        this.rightPanelComponent.render(state);
         
         this._updateButtonStates(state);
         this._updateLeftPanelState(state.ui.currentView);

@@ -78,6 +78,18 @@
     text-align: center;
 }
 
+.f1-qty-display {
+    background-color: #bfdbfe; /* Blue background for consistency */
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+    padding: 5px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    min-height: 28.5px; /* Match input height */
+    font-family: "Menlo", "Consolas", monospace;
+}
+
 .f1-price-display {
     background-color: #dcfce7; /* Green background */
     border: 1px solid #86efac;

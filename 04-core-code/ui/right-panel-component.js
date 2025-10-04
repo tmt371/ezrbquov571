@@ -8,18 +8,18 @@ export class RightPanelComponent {
         }
         this.panelElement = panelElement;
         this.eventAggregator = eventAggregator;
-        this.calculationService = calculationService; // [NEW] Receive service
+        this.calculationService = calculationService;
 
         this.tabContainer = this.panelElement.querySelector('.tab-container');
         this.tabButtons = this.panelElement.querySelectorAll('.tab-button');
         this.tabContents = this.panelElement.querySelectorAll('.tab-content');
 
-        this.f1Prices = {}; // [NEW] Object to store calculated F1 prices
+        this.f1ManualPrices = {};
 
         this._cacheF1Elements();
         this._cacheF2Elements();
         this.initialize();
-        console.log("RightPanelComponent Initialized.");
+        console.log("RightPanelComponent Initialized for F1 Cost Display.");
     }
 
     initialize() {
@@ -33,7 +33,6 @@ export class RightPanelComponent {
             });
         }
 
-        // --- Initialize Listeners for Both Panels ---
         this._initializeF1ButtonListeners();
         this._initializeF1InputListeners();
         this._initializeF2Listeners();
@@ -46,8 +45,6 @@ export class RightPanelComponent {
             }
         });
     }
-
-    // --- NEW: F1 Panel Methods ---
 
     _initializeF1ButtonListeners() {
         const buttonEventMap = {
@@ -64,33 +61,31 @@ export class RightPanelComponent {
         for (const [id, eventName] of Object.entries(buttonEventMap)) {
             const button = this.f1.buttons[id];
             if (button) {
-                button.addEventListener('click', () => {
-                    this.eventAggregator.publish(eventName);
-                });
+                button.addEventListener('click', () => this.eventAggregator.publish(eventName));
             }
         }
     }
 
     _initializeF1InputListeners() {
-        for (const key in this.f1.inputs) {
+        // Only listen to the inputs that are still manually editable
+        const manualInputs = ['remote-1ch', 'dual-combo', 'slim'];
+        manualInputs.forEach(key => {
             const inputElement = this.f1.inputs[key];
             if (inputElement) {
                 inputElement.addEventListener('input', (event) => {
-                    this._handleF1InputChange(key, event.target.value);
+                    this._handleF1ManualInputChange(key, event.target.value);
                 });
             }
-        }
+        });
     }
 
-    _handleF1InputChange(componentKey, value) {
+    _handleF1ManualInputChange(componentKey, value) {
         const quantity = value === '' ? 0 : parseInt(value, 10);
+        if (isNaN(quantity) || quantity < 0) return;
 
-        if (isNaN(quantity) || quantity < 0) {
-            return;
-        }
-
+        // Note: For manual inputs, we still use the flexible calculation service
         const price = this.calculationService.calculateF1ComponentPrice(componentKey, quantity);
-        this.f1Prices[componentKey] = price;
+        this.f1ManualPrices[componentKey] = price;
 
         const priceElement = this.f1.prices[componentKey];
         if (priceElement) {
@@ -100,13 +95,11 @@ export class RightPanelComponent {
         this._updateF1Total();
     }
 
-    _updateF1Total() {
-        const dualPrice = (this.f1Prices['dual-combo'] || 0) + (this.f1Prices['slim'] || 0);
-        if (this.f1.prices['dual']) {
-            this.f1.prices['dual'].textContent = dualPrice > 0 ? `$${dualPrice.toFixed(2)}` : '';
-        }
+    _updateF1Total(linkedPrices) {
+        const manualTotal = Object.values(this.f1ManualPrices).reduce((sum, price) => sum + price, 0);
+        const linkedTotal = Object.values(linkedPrices).reduce((sum, price) => sum + price, 0);
+        const total = manualTotal + linkedTotal;
 
-        const total = Object.values(this.f1Prices).reduce((sum, price) => sum + price, 0);
         if (this.f1.total) {
             this.f1.total.textContent = total > 0 ? `$${total.toFixed(2)}` : '';
         }
@@ -126,42 +119,38 @@ export class RightPanelComponent {
                 'f1-key-reset': query('#f1-key-reset'),
             },
             inputs: {
-                'winder': query('#f1-qty-winder'),
-                'motor': query('#f1-qty-motor'),
                 'remote-1ch': query('#f1-qty-remote-1ch'),
-                'remote-16ch': query('#f1-qty-remote-16ch'),
-                'charger': query('#f1-qty-charger'),
-                '3m-cord': query('#f1-qty-3m-cord'),
                 'dual-combo': query('#f1-qty-dual-combo'),
                 'slim': query('#f1-qty-slim'),
             },
-            prices: {
-                'winder': query('#f1-price-winder'),
-                'motor': query('#f1-price-motor'),
-                'remote-1ch': query('#f1-price-remote-1ch'),
-                'remote-16ch': query('#f1-price-remote-16ch'),
-                'charger': query('#f1-price-charger'),
-                '3m-cord': query('#f1-price-3m-cord'),
-                'dual': query('#f1-price-dual'),
-                'dual-combo': query('#f1-price-dual-combo'),
-                'slim': query('#f1-price-slim'),
+            displays: {
+                qty: {
+                    'winder': query('#f1-qty-winder'),
+                    'motor': query('#f1-qty-motor'),
+                    'remote-16ch': query('#f1-qty-remote-16ch'),
+                    'charger': query('#f1-qty-charger'),
+                    '3m-cord': query('#f1-qty-3m-cord'),
+                },
+                price: {
+                    'winder': query('#f1-price-winder'),
+                    'motor': query('#f1-price-motor'),
+                    'remote-1ch': query('#f1-price-remote-1ch'),
+                    'remote-16ch': query('#f1-price-remote-16ch'),
+                    'charger': query('#f1-price-charger'),
+                    '3m-cord': query('#f1-price-3m-cord'),
+                    'dual-combo': query('#f1-price-dual-combo'),
+                    'slim': query('#f1-price-slim'),
+                }
             },
             total: query('#f1-price-total')
         };
     }
 
-    // --- End of F1 Methods ---
-
-    // --- F2 Panel Methods ---
-
     _initializeF2Listeners() {
         const setupF2InputListener = (inputElement) => {
             if (inputElement) {
                 inputElement.addEventListener('change', (event) => {
-                    this.eventAggregator.publish('f2ValueChanged', {
-                        id: event.target.id,
-                        value: event.target.value
-                    });
+                    this.eventAggregator.publish('f2ValueChanged', { id: event.target.id, value: event.target.value });
                 });
                 
                 inputElement.addEventListener('keydown', (event) => {
@@ -227,9 +216,43 @@ export class RightPanelComponent {
         };
     }
 
-    render(uiState) {
-        // F1 is self-contained and doesn't need data from the global state.
-        this._renderF2Tab(uiState);
+    render(state) {
+        this._renderF1Tab(state);
+        this._renderF2Tab(state);
+    }
+
+    _renderF1Tab(state) {
+        if (!this.f1 || !state || !state.quoteData || !state.ui) return;
+
+        const items = state.quoteData.products.rollerBlind.items;
+        const uiState = state.ui;
+
+        const linkedQuantities = {
+            winder: items.filter(item => item.winder === 'HD').length,
+            motor: items.filter(item => !!item.motor).length,
+            'remote-16ch': uiState.driveRemoteCount, // Assuming K4 remote count is for 16ch
+            charger: uiState.driveChargerCount,
+            '3m-cord': uiState.driveCordCount
+        };
+
+        const multipliers = {
+            winder: 8, motor: 160, 'remote-16ch': 70, charger: 25, '3m-cord': 5
+        };
+
+        const linkedPrices = {};
+
+        for (const [key, qty] of Object.entries(linkedQuantities)) {
+            if (this.f1.displays.qty[key]) {
+                this.f1.displays.qty[key].textContent = qty || '0';
+            }
+            const price = (qty || 0) * (multipliers[key] || 0);
+            linkedPrices[key] = price;
+            if (this.f1.displays.price[key]) {
+                this.f1.displays.price[key].textContent = price > 0 ? `$${price.toFixed(2)}` : '';
+            }
+        }
+
+        this._updateF1Total(linkedPrices);
     }
 
     _renderF2Tab(uiState) {

@@ -96,6 +96,7 @@ class App {
             configManager: this.configManager,
             initialState: startingState
         });
+        // [FIX] calculationService is now a class property (this.calculationService)
         this.calculationService = new CalculationService({
             productFactory: productFactory,
             configManager: this.configManager
@@ -109,6 +110,7 @@ class App {
 
         const publishStateChangeCallback = () => this.eventAggregator.publish('stateChanged', this.appController._getFullState());
 
+        // [FIX] Pass this.calculationService to all components that need it.
         const quickQuoteView = new QuickQuoteView({
             quoteService,
             calculationService: this.calculationService,
@@ -216,7 +218,7 @@ class App {
         this.uiManager = new UIManager(
             document.getElementById('app'),
             this.eventAggregator,
-            this.calculationService // [FIX] Pass the instance property, not the undefined local const
+            this.calculationService // [FIX] Pass the instance property
         );
 
         await this.configManager.initialize();
