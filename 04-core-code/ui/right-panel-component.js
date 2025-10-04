@@ -23,6 +23,7 @@ export class RightPanelComponent {
     }
 
     initialize() {
+        // --- Global Tab Click Handler ---
         if (this.tabContainer) {
             this.tabContainer.addEventListener('click', (event) => {
                 const target = event.target.closest('.tab-button');

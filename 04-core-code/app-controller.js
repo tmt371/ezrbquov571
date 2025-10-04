@@ -210,15 +210,15 @@ export class AppController {
 
         const acceSum = winderPrice + dualPrice;
         const eAcceSum = motorPrice + remotePrice + chargerPrice + cordPrice + wifiSum;
-        const surchargeFee = 
+        const surchargeFee =
             (f2State.deliveryFeeExcluded ? 0 : deliveryFee) +
             (f2State.installFeeExcluded ? 0 : installFee) +
             (f2State.removalFeeExcluded ? 0 : removalFee);
-        
+
         const firstRbPrice = totalSumFromQuickQuote * mulTimes;
         const disRbPriceValue = firstRbPrice * (1 - (discount / 100));
         const disRbPrice = Math.round(disRbPriceValue * 100) / 100;
-        
+
         const sumPrice = acceSum + eAcceSum + surchargeFee + disRbPrice;
 
         this.uiService.setF2Value('wifiSum', wifiSum);
@@ -231,7 +231,7 @@ export class AppController {
         this.uiService.setF2Value('firstRbPrice', firstRbPrice);
         this.uiService.setF2Value('disRbPrice', disRbPrice);
         this.uiService.setF2Value('sumPrice', sumPrice);
-        
+
         this._publishStateChange();
     }
     
