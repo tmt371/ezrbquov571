@@ -10,11 +10,12 @@
     background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
-    align-items: flex-start; 
+    align-items: center; /* [MODIFIED] Center vertically for easier positioning */
     z-index: 10000;
     opacity: 1;
     transition: opacity 0.2s ease-in-out;
-    padding-top: 20vh;
+    padding: 20px; /* Add some padding for small screens */
+    box-sizing: border-box;
 }
 
 .dialog-overlay.is-hidden {
@@ -24,30 +25,27 @@
 
 .dialog-box {
     background-color: white;
-    padding: 20px;
+    padding: 24px;
     border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     text-align: center;
-    margin-top: calc( (100vh - 20vh) / 3 * 2 - 50% - 20px );
-    max-width: 600px;
-    width: 90%;
-    font-size: 85%;
+    max-width: 500px; /* [MODIFIED] Set a max-width for larger screens */
+    width: 90%; /* [MODIFIED] Use a percentage for smaller screens */
+    font-size: 100%; /* [MODIFIED] Use base font size */
     
-    /* [NEW] Set the aspect ratio to 4:3 */
-    aspect-ratio: 4 / 3;
-    /* [NEW] To make the aspect ratio work well, we need to use flexbox for layout */
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 24px; /* [MODIFIED] Use gap for consistent spacing instead of space-between */
+
+    /* [MODIFIED] This ensures the box doesn't get too tall and the bottom is visible */
+    max-height: 80vh;
 }
 
 .dialog-message {
-    margin-top: 0;
-    margin-bottom: 15px;
+    margin: 0; /* [MODIFIED] Remove margin, use gap from parent instead */
     font-size: 1.1em;
     line-height: 1.5;
     color: #333;
-    flex-shrink: 0; /* Prevent message from shrinking */
 }
 
 .dialog-buttons {

@@ -222,13 +222,8 @@ export class K2FabricView {
                 const hasSelection = lfSelectedRowIndexes.size > 0;
                 input.disabled = !(isLFRow && hasSelection);
             });
-            const firstEnabledInput = document.querySelector('.panel-input:not([disabled])');
-            if (firstEnabledInput) {
-                setTimeout(() => {
-                    firstEnabledInput.focus();
-                    firstEnabledInput.select();
-                }, 50);
-            }
+            // [FIX] Removed automatic focus setting to prevent interrupting multi-selection flow.
+            // The user can manually click the input field when ready.
         } else {
              allPanelInputs.forEach(input => {
                 input.disabled = true;
