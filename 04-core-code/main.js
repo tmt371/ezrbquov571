@@ -111,7 +111,7 @@ class App {
 
         const quickQuoteView = new QuickQuoteView({
             quoteService,
-            calculationService,
+            calculationService: this.calculationService,
             focusService,
             fileService,
             uiService,
@@ -143,7 +143,7 @@ class App {
         const dualChainView = new DualChainView({
             quoteService,
             uiService,
-            calculationService,
+            calculationService: this.calculationService,
             eventAggregator: this.eventAggregator,
             publishStateChangeCallback
         });
@@ -151,7 +151,7 @@ class App {
         const driveAccessoriesView = new DriveAccessoriesView({
             quoteService,
             uiService,
-            calculationService,
+            calculationService: this.calculationService,
             eventAggregator: this.eventAggregator,
             publishStateChangeCallback
         });
@@ -159,7 +159,7 @@ class App {
         const detailConfigView = new DetailConfigView({
             quoteService,
             uiService,
-            calculationService,
+            calculationService: this.calculationService,
             eventAggregator: this.eventAggregator,
             publishStateChangeCallback,
             k1LocationView: k1LocationView,
@@ -176,7 +176,7 @@ class App {
             fileService,
             quickQuoteView,
             detailConfigView,
-            calculationService,
+            calculationService: this.calculationService,
             productFactory // [HOTFIX] Injected the missing productFactory dependency.
         });
     }
