@@ -123,4 +123,40 @@ export class CalculationService {
 
         return 0;
     }
+
+    /**
+     * [NEW] Calculates the total price for a given F1 panel component based on its quantity.
+     * @param {string} componentKey - The key identifying the component from the F1 panel (e.g., 'winder', 'motor').
+     * @param {number} quantity - The quantity entered by the user.
+     * @returns {number} The calculated total price for the component.
+     */
+    calculateF1ComponentPrice(componentKey, quantity) {
+        if (typeof quantity !== 'number' || quantity < 0) {
+            return 0;
+        }
+
+        const keyMap = {
+            'winder': 'winderHD',
+            'motor': 'motorStandard',
+            'remote-1ch': 'remoteSingleChannel',
+            'remote-16ch': 'remoteMultiChannel16',
+            'charger': 'charger',
+            '3m-cord': 'cord3m',
+            'dual-combo': 'comboBracket',
+            'slim': 'slimComboBracket'
+        };
+
+        const accessoryKey = keyMap[componentKey];
+        if (!accessoryKey) {
+            console.error(`No accessory key found for F1 component: ${componentKey}`);
+            return 0;
+        }
+
+        const unitPrice = this.configManager.getAccessoryPrice(accessoryKey);
+        if (unitPrice === null) {
+            return 0;
+        }
+
+        return unitPrice * quantity;
+    }
 }
