@@ -96,7 +96,7 @@ class App {
             configManager: this.configManager,
             initialState: startingState
         });
-        const calculationService = new CalculationService({
+        this.calculationService = new CalculationService({
             productFactory: productFactory,
             configManager: this.configManager
         });
@@ -216,7 +216,7 @@ class App {
         this.uiManager = new UIManager(
             document.getElementById('app'),
             this.eventAggregator,
-            calculationService // [NEW] Pass service to UIManager
+            this.calculationService // [FIX] Pass the instance property, not the undefined local const
         );
 
         await this.configManager.initialize();
