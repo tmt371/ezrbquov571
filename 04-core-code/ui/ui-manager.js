@@ -9,9 +9,10 @@ import { LeftPanelComponent } from './left-panel-component.js';
 import { RightPanelComponent } from './right-panel-component.js';
 
 export class UIManager {
-    constructor(appElement, eventAggregator) {
+    constructor(appElement, eventAggregator, calculationService) {
         this.appElement = appElement;
         this.eventAggregator = eventAggregator;
+        this.calculationService = calculationService; // [NEW] Store service
 
         this.numericKeyboardPanel = document.getElementById('numeric-keyboard-panel');
         this.insertButton = document.getElementById('key-insert');
@@ -38,7 +39,8 @@ export class UIManager {
         
         this.rightPanelComponent = new RightPanelComponent(
             document.getElementById('function-panel'),
-            this.eventAggregator
+            this.eventAggregator,
+            this.calculationService // [NEW] Pass service down
         );
 
         this.notificationComponent = new NotificationComponent({

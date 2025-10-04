@@ -214,8 +214,9 @@ class App {
         await this._loadPartials();
 
         this.uiManager = new UIManager(
-            document.getElementById('app'), 
-            this.eventAggregator
+            document.getElementById('app'),
+            this.eventAggregator,
+            calculationService // [NEW] Pass service to UIManager
         );
 
         await this.configManager.initialize();
