@@ -34,8 +34,8 @@ export class K2FabricView {
                     closeOnOverlayClick: false, // [MODIFIED] Make this a modal dialog
                     layout: [
                         [
-                            { text: 'Continue', callback: () => this._enterFCMode(true) }, // [MODIFIED] Changed text
-                            { text: 'Cancel', className: 'secondary', callback: () => {} }
+                            { type: 'button', text: 'Continue', callback: () => this._enterFCMode(true) },
+                            { type: 'button', text: 'Cancel', className: 'secondary', callback: () => {} }
                         ]
                     ]
                 });

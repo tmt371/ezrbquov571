@@ -20,10 +20,12 @@ export class DualChainView {
         const currentMode = this.uiService.getState().dualChainMode;
         const newMode = currentMode === mode ? null : mode;
 
-        // When exiting a mode, perform final calculations.
+        // When exiting a mode, perform final validation and calculations.
         if (currentMode === 'dual') {
-            this.recalculateDualPrice(); // Recalculate sale price
-            // The cost calculation logic that was here has been removed.
+            const isValid = this.recalculateDualPrice(); // Recalculate sale price and validate
+            if (!isValid) {
+                return; // If validation fails, do not exit the mode.
+            }
         }
         
         this.uiService.setDualChainMode(newMode);
