@@ -226,6 +226,9 @@ class App {
 
         this.eventAggregator.subscribe('welcomeDialogConfirmed', () => {
             this.uiManager._adjustLeftPanelLayout();
+            // [NEW] Set initial focus on the first cell of the main table
+            // after the welcome dialog is confirmed by the user.
+            this.eventAggregator.publish('focusCell', { rowIndex: 0, column: 'width' });
         });
         
         this.appController.publishInitialState(); 
