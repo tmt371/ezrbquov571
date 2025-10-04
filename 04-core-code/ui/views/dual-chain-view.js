@@ -46,14 +46,34 @@ export class DualChainView {
     recalculateDualPrice() {
         const items = this.quoteService.getItems();
         const productType = this.quoteService.getCurrentProductType();
-        const dualCount = items.filter(item => item.dual === 'D').length;
 
+        const selectedIndexes = items.reduce((acc, item, index) => {
+            if (item.dual === 'D') {
+                acc.push(index);
+            }
+            return acc;
+        }, []);
+
+        const dualCount = selectedIndexes.length;
+
+        // Rule 1: The total count must be an even number.
         if (dualCount % 2 !== 0) {
             this.eventAggregator.publish('showNotification', {
-                message: '雙層支架(D)的總數必須為偶數，請修正後再退出。',
+                message: 'The total count of Dual Brackets (D) must be an even number. Please correct the selection.',
                 type: 'error'
             });
             return false; // Indicate failure
+        }
+
+        // Rule 2: The selected items must be in adjacent pairs.
+        for (let i = 0; i < dualCount; i += 2) {
+            if (selectedIndexes[i+1] !== selectedIndexes[i] + 1) {
+                this.eventAggregator.publish('showNotification', {
+                    message: 'Dual Brackets (D) must be set on adjacent items. Please check your selection.',
+                    type: 'error'
+                });
+                return false; // Indicate failure
+            }
         }
         
         const price = this.calculationService.calculateAccessoryPrice(productType, 'dual', { items });
@@ -72,7 +92,7 @@ export class DualChainView {
         const valueAsNumber = Number(value);
         if (value !== '' && (!Number.isInteger(valueAsNumber) || valueAsNumber <= 0)) {
             this.eventAggregator.publish('showNotification', {
-                message: '僅能輸入正整數。',
+                message: 'Only positive integers are allowed.',
                 type: 'error'
             });
             return;

@@ -31,9 +31,10 @@ export class K2FabricView {
             if (hasConflict) {
                 this.eventAggregator.publish('showConfirmationDialog', {
                     message: 'Some eligible items (B2, B3, B4) have Light-Filter settings. Continuing will overwrite this data. Proceed?',
+                    closeOnOverlayClick: false, // [MODIFIED] Make this a modal dialog
                     layout: [
                         [
-                            { text: 'OK', callback: () => this._enterFCMode(true) },
+                            { text: 'Continue', callback: () => this._enterFCMode(true) }, // [MODIFIED] Changed text
                             { text: 'Cancel', className: 'secondary', callback: () => {} }
                         ]
                     ]

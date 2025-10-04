@@ -78,7 +78,8 @@ export class DialogComponent {
         this.eventAggregator.subscribe('showConfirmationDialog', (config) => this.show(config));
 
         this.overlay.addEventListener('click', (event) => {
-            if (event.target === this.overlay) {
+            // [MODIFIED] Only hide if the overlay is clicked AND the dialog is configured to allow it.
+            if (event.target === this.overlay && this.closeOnOverlayClick) {
                 this.hide();
             }
         });
@@ -89,8 +90,10 @@ export class DialogComponent {
      * @param {object} config - The configuration object.
      * @param {string} config.message - The message to display.
      * @param {Array<Array<object>>} config.layout - An array of rows, where each row is an array of cell objects.
+     * @param {boolean} [config.closeOnOverlayClick=true] - Whether clicking the overlay closes the dialog.
      */
-    show({ message, layout = [], position = 'center' }) {
+    show({ message, layout = [], position = 'center', closeOnOverlayClick = true }) {
+        this.closeOnOverlayClick = closeOnOverlayClick;
         this.buttonsContainer.innerHTML = '';
 
         if (this.messageElement) {
