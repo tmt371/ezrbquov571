@@ -45,6 +45,18 @@ export class DriveAccessoriesView {
         this.uiService.setDriveAccessoryMode(newMode);
 
         if (newMode) {
+            // [NEW] Automatically set quantity to 1 for remote/charger if motors exist.
+            if (newMode === 'remote' || newMode === 'charger') {
+                const items = this.quoteService.getItems();
+                const hasMotor = items.some(item => !!item.motor);
+                const state = this.uiService.getState();
+                const currentCount = newMode === 'remote' ? state.driveRemoteCount : state.driveChargerCount;
+
+                if (hasMotor && (currentCount === 0 || currentCount === null)) {
+                    this.uiService.setDriveAccessoryCount(newMode, 1);
+                }
+            }
+
             const message = this._getHintMessage(newMode);
             this.eventAggregator.publish('showNotification', { message });
         }
@@ -143,13 +155,12 @@ export class DriveAccessoriesView {
 
         if (isActivatingWinder) {
             if (item.motor) {
-                // [BUGFIX] Corrected dialog configuration to use 'layout' property instead of obsolete 'buttons'.
                 this.eventAggregator.publish('showConfirmationDialog', {
-                    message: '該捲簾已經設定為電動，確定要改為HD？',
+                    message: 'This blind is set to Motor. Are you sure you want to change it to HD Winder?',
                     layout: [
                         [
-                            { type: 'button', text: '確定', callback: () => this._toggleWinder(rowIndex, true) },
-                            { type: 'button', text: '取消', className: 'secondary', callback: () => {} }
+                            { type: 'button', text: 'Confirm', callback: () => this._toggleWinder(rowIndex, true) },
+                            { type: 'button', text: 'Cancel', className: 'secondary', callback: () => {} }
                         ]
                     ]
                 });
@@ -158,13 +169,12 @@ export class DriveAccessoriesView {
             }
         } else if (isActivatingMotor) {
             if (item.winder) {
-                // [BUGFIX] Corrected dialog configuration to use 'layout' property instead of obsolete 'buttons'.
                 this.eventAggregator.publish('showConfirmationDialog', {
-                    message: '該捲簾已經設定為HD，確定要改為電動？',
+                    message: 'This blind is set to HD Winder. Are you sure you want to change it to Motor?',
                     layout: [
                         [
-                            { type: 'button', text: '確定', callback: () => this._toggleMotor(rowIndex, true) },
-                            { type: 'button', text: '取消', className: 'secondary', callback: () => {} }
+                            { type: 'button', text: 'Confirm', callback: () => this._toggleMotor(rowIndex, true) },
+                            { type: 'button', text: 'Cancel', className: 'secondary', callback: () => {} }
                         ]
                     ]
                 });
@@ -188,17 +198,16 @@ export class DriveAccessoriesView {
             const items = this.quoteService.getItems();
             const hasMotor = items.some(item => !!item.motor);
             if (hasMotor && (accessory === 'remote' || accessory === 'charger')) {
-                const accessoryName = accessory === 'remote' ? '遙控器' : '充電器';
-                // [BUGFIX] Corrected dialog configuration to use 'layout' property.
+                const accessoryName = accessory === 'remote' ? 'Remote' : 'Charger';
                 this.eventAggregator.publish('showConfirmationDialog', {
-                    message: `系統偵測到有電動馬達，確定不要${accessoryName}？`,
+                    message: `Motors are present in the quote. Are you sure you want to set the ${accessoryName} quantity to 0?`,
                     layout: [
                         [
-                            { type: 'button', text: '確定不要', callback: () => {
+                            { type: 'button', text: 'Confirm', callback: () => {
                                 this.uiService.setDriveAccessoryCount(accessory, 0);
                                 this.publish();
                             }},
-                            { type: 'button', text: '取消', className: 'secondary', callback: () => {} }
+                            { type: 'button', text: 'Cancel', className: 'secondary', callback: () => {} }
                         ]
                     ]
                 });
@@ -275,12 +284,12 @@ export class DriveAccessoriesView {
 
     _getHintMessage(mode) {
         const hints = {
-            winder: '請點擊第二表 Winder 欄位下的儲存格以設定 HD。',
-            motor: '請點擊第二表 Motor 欄位下的儲存格以設定 Motor。',
-            remote: '請點擊 + 或 - 來增加或減少遙控器的數量。',
-            charger: '請點擊 + 或 - 來增加或減少充電器的數量。',
-            cord: '請點擊 + 或 - 來增加或減少延長線的數量。'
+            winder: 'Click a cell under the Winder column to set HD.',
+            motor: 'Click a cell under the Motor column to set Motor.',
+            remote: 'Click + or - to increase or decrease the quantity of remotes.',
+            charger: 'Click + or - to increase or decrease the quantity of chargers.',
+            cord: 'Click + or - to increase or decrease the quantity of extension cords.'
         };
-        return hints[mode] || '請進行您的設定。';
+        return hints[mode] || 'Please make your selection.';
     }
 }

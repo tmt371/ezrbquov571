@@ -22,16 +22,20 @@ export class K2FabricView {
         if (newMode) {
             const items = this.quoteService.getItems();
             const { lfModifiedRowIndexes } = this.uiService.getState();
+            // [MODIFIED] Check for conflicts across all eligible types (B2, B3, B4).
+            const eligibleTypes = ['B2', 'B3', 'B4'];
             const hasConflict = items.some((item, index) => 
-                item.fabricType === 'B2' && lfModifiedRowIndexes.has(index)
+                eligibleTypes.includes(item.fabricType) && lfModifiedRowIndexes.has(index)
             );
 
             if (hasConflict) {
                 this.eventAggregator.publish('showConfirmationDialog', {
-                    message: 'Some B2 items have Light-Filter settings. Continuing will overwrite this data. Proceed?',
-                    buttons: [
-                        { text: 'OK', callback: () => this._enterFCMode(true) },
-                        { text: 'Cancel', className: 'secondary', callback: () => {} }
+                    message: 'Some eligible items (B2, B3, B4) have Light-Filter settings. Continuing will overwrite this data. Proceed?',
+                    layout: [
+                        [
+                            { text: 'OK', callback: () => this._enterFCMode(true) },
+                            { text: 'Cancel', className: 'secondary', callback: () => {} }
+                        ]
                     ]
                 });
             } else {
@@ -47,8 +51,10 @@ export class K2FabricView {
             const items = this.quoteService.getItems();
             const { lfModifiedRowIndexes } = this.uiService.getState();
             const indexesToClear = new Set();
+            // [MODIFIED] Clear existing settings from all eligible types.
+            const eligibleTypes = ['B2', 'B3', 'B4'];
             items.forEach((item, index) => {
-                if (item.fabricType === 'B2' && lfModifiedRowIndexes.has(index)) {
+                if (eligibleTypes.includes(item.fabricType) && lfModifiedRowIndexes.has(index)) {
                     indexesToClear.add(index);
                 }
             });
@@ -119,9 +125,10 @@ export class K2FabricView {
                 }
             }
 
-            // [MODIFIED] Changed the selection rule from 'is not B2' to 'is B1'.
-            if (activeEditMode === 'K2_LF_SELECT' && item.fabricType === 'B1') {
-                this.eventAggregator.publish('showNotification', { message: 'Items with TYPE "B1" cannot be selected for this operation.', type: 'error' });
+            // [MODIFIED] Expanded selection rule to include B2, B3, and B4.
+            const eligibleTypes = ['B2', 'B3', 'B4'];
+            if (activeEditMode === 'K2_LF_SELECT' && !eligibleTypes.includes(item.fabricType)) {
+                this.eventAggregator.publish('showNotification', { message: 'Only items with TYPE "B2", "B3", or "B4" can be selected.', type: 'error' });
                 return;
             }
             this.uiService.toggleLFSelection(rowIndex);
@@ -140,7 +147,8 @@ export class K2FabricView {
             this._exitAllK2Modes();
         } else {
             this.uiService.setActiveEditMode('K2_LF_SELECT');
-            this.eventAggregator.publish('showNotification', { message: 'Please select the items with TYPE \'B2\' to edit the fabric name and color settings for the roller blinds.' });
+            // [MODIFIED] Updated hint message to include all eligible types.
+            this.eventAggregator.publish('showNotification', { message: 'Please select items with TYPE \'B2\', \'B3\', or \'B4\' to edit.' });
             this.publish();
         }
     }
@@ -214,13 +222,8 @@ export class K2FabricView {
                 const hasSelection = lfSelectedRowIndexes.size > 0;
                 input.disabled = !(isLFRow && hasSelection);
             });
-            const firstEnabledInput = document.querySelector('.panel-input:not([disabled])');
-            if (firstEnabledInput) {
-                setTimeout(() => {
-                    firstEnabledInput.focus();
-                    firstEnabledInput.select();
-                }, 50);
-            }
+            // [FIX] Removed automatic focus setting to prevent interrupting multi-selection flow.
+            // The user can manually click the input field when ready.
         } else {
              allPanelInputs.forEach(input => {
                 input.disabled = true;
