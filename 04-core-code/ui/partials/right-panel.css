@@ -1,7 +1,5 @@
 /* File: 04-core-code/ui/css/right-panel.css */
 
-@import url('./f2-summary-table.css');
-
 /* --- Right Function Panel Base Styles --- */
 #function-panel {
     position: fixed;
