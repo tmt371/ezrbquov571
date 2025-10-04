@@ -226,11 +226,13 @@ class App {
 
         this.eventAggregator.subscribe('welcomeDialogConfirmed', () => {
             this.uiManager._adjustLeftPanelLayout();
+
             // [FIX] Use a setTimeout to ensure the DOM has been fully updated
             // after the dialog closes before we attempt to set focus.
             setTimeout(() => {
                 this.eventAggregator.publish('focusCell', { rowIndex: 0, column: 'width' });
             }, 50); // A small delay is sufficient.
+
         });
         
         this.appController.publishInitialState(); 
