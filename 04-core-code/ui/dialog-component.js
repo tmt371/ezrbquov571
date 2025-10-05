@@ -22,20 +22,20 @@ export class DialogComponent {
     initialize() {
         this.eventAggregator.subscribe('showWelcomeDialog', () => {
             this.show({
-                message: '請問捲簾所套用的成本折扣數為多少％？',
+                message: 'What is the cost discount percentage for this quote?',
                 layout: [
                     [
                         { 
                             type: 'input', 
                             id: 'dialog-input-cost-dis',
-                            placeholder: '輸入 0 到 100 之間的正整數',
+                            placeholder: 'Enter a whole number between 0 and 100',
                             colspan: 3 
                         }
                     ],
                     [
                         { 
                             type: 'button', 
-                            text: '確定', 
+                            text: 'Confirm',
                             colspan: 3,
                             className: 'primary-confirm-button', // Add a class to identify the confirm button
                             callback: () => {
@@ -45,7 +45,7 @@ export class DialogComponent {
 
                                 if (value === '' || isNaN(percentage) || percentage < 0 || percentage > 100) {
                                     this.eventAggregator.publish('showNotification', { 
-                                        message: '輸入無效。請輸入 0 到 100 之間的正整數。', 
+                                        message: 'Invalid input. Please enter a whole number between 0 and 100.',
                                         type: 'error' 
                                     });
                                     // By returning false, we prevent the dialog from closing on invalid input.
@@ -78,7 +78,8 @@ export class DialogComponent {
         this.eventAggregator.subscribe('showConfirmationDialog', (config) => this.show(config));
 
         this.overlay.addEventListener('click', (event) => {
-            if (event.target === this.overlay) {
+            // [MODIFIED] Only hide if the overlay is clicked AND the dialog is configured to allow it.
+            if (event.target === this.overlay && this.closeOnOverlayClick) {
                 this.hide();
             }
         });
@@ -89,8 +90,10 @@ export class DialogComponent {
      * @param {object} config - The configuration object.
      * @param {string} config.message - The message to display.
      * @param {Array<Array<object>>} config.layout - An array of rows, where each row is an array of cell objects.
+     * @param {boolean} [config.closeOnOverlayClick=true] - Whether clicking the overlay closes the dialog.
      */
-    show({ message, layout = [], position = 'center' }) {
+    show({ message, layout = [], position = 'center', closeOnOverlayClick = true }) {
+        this.closeOnOverlayClick = closeOnOverlayClick;
         this.buttonsContainer.innerHTML = '';
 
         if (this.messageElement) {

@@ -96,7 +96,8 @@ class App {
             configManager: this.configManager,
             initialState: startingState
         });
-        const calculationService = new CalculationService({
+        // [FIX] calculationService is now a class property (this.calculationService)
+        this.calculationService = new CalculationService({
             productFactory: productFactory,
             configManager: this.configManager
         });
@@ -109,9 +110,10 @@ class App {
 
         const publishStateChangeCallback = () => this.eventAggregator.publish('stateChanged', this.appController._getFullState());
 
+        // [FIX] Pass this.calculationService to all components that need it.
         const quickQuoteView = new QuickQuoteView({
             quoteService,
-            calculationService,
+            calculationService: this.calculationService,
             focusService,
             fileService,
             uiService,
@@ -143,7 +145,7 @@ class App {
         const dualChainView = new DualChainView({
             quoteService,
             uiService,
-            calculationService,
+            calculationService: this.calculationService,
             eventAggregator: this.eventAggregator,
             publishStateChangeCallback
         });
@@ -151,7 +153,7 @@ class App {
         const driveAccessoriesView = new DriveAccessoriesView({
             quoteService,
             uiService,
-            calculationService,
+            calculationService: this.calculationService,
             eventAggregator: this.eventAggregator,
             publishStateChangeCallback
         });
@@ -159,7 +161,7 @@ class App {
         const detailConfigView = new DetailConfigView({
             quoteService,
             uiService,
-            calculationService,
+            calculationService: this.calculationService,
             eventAggregator: this.eventAggregator,
             publishStateChangeCallback,
             k1LocationView: k1LocationView,
@@ -176,7 +178,7 @@ class App {
             fileService,
             quickQuoteView,
             detailConfigView,
-            calculationService,
+            calculationService: this.calculationService,
             productFactory // [HOTFIX] Injected the missing productFactory dependency.
         });
     }
@@ -214,8 +216,9 @@ class App {
         await this._loadPartials();
 
         this.uiManager = new UIManager(
-            document.getElementById('app'), 
-            this.eventAggregator
+            document.getElementById('app'),
+            this.eventAggregator,
+            this.calculationService // [FIX] Pass the instance property
         );
 
         await this.configManager.initialize();
@@ -226,6 +229,11 @@ class App {
 
         this.eventAggregator.subscribe('welcomeDialogConfirmed', () => {
             this.uiManager._adjustLeftPanelLayout();
+            // [FIX] Use a setTimeout to ensure the DOM has been fully updated
+            // after the dialog closes before we attempt to set focus.
+            setTimeout(() => {
+                this.eventAggregator.publish('focusCell', { rowIndex: 0, column: 'width' });
+            }, 50); // A small delay is sufficient.
         });
         
         this.appController.publishInitialState(); 
