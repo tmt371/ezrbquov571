@@ -15,6 +15,7 @@ export class RightPanelComponent {
         this.tabContents = this.panelElement.querySelectorAll('.tab-content');
 
         this.f1ManualPrices = {};
+        this.f1LinkedPrices = {}; // [FIX] Initialize object to store linked prices
 
         this._cacheF1Elements();
         this._cacheF2Elements();
@@ -86,7 +87,8 @@ export class RightPanelComponent {
         const price = this.calculationService.calculateF1ComponentPrice(componentKey, quantity);
         this.f1ManualPrices[componentKey] = price;
 
-        const priceElement = this.f1.prices[componentKey];
+        // [FIX] Correctly access the nested price display element
+        const priceElement = this.f1.displays.price[componentKey];
         if (priceElement) {
             priceElement.textContent = price > 0 ? `$${price.toFixed(2)}` : '';
         }
@@ -94,9 +96,10 @@ export class RightPanelComponent {
         this._updateF1Total();
     }
 
-    _updateF1Total(linkedPrices) {
-        const manualTotal = Object.values(this.f1ManualPrices).reduce((sum, price) => sum + price, 0);
-        const linkedTotal = Object.values(linkedPrices).reduce((sum, price) => sum + price, 0);
+    _updateF1Total() {
+        // [FIX] Use class properties to ensure both manual and linked prices are available
+        const manualTotal = Object.values(this.f1ManualPrices).reduce((sum, price) => sum + (price || 0), 0);
+        const linkedTotal = Object.values(this.f1LinkedPrices).reduce((sum, price) => sum + (price || 0), 0);
         const total = manualTotal + linkedTotal;
 
         if (this.f1.total) {
@@ -238,20 +241,20 @@ export class RightPanelComponent {
             winder: 8, motor: 160, 'remote-16ch': 70, charger: 25, '3m-cord': 5
         };
 
-        const linkedPrices = {};
+        this.f1LinkedPrices = {}; // [FIX] Reset linked prices on each render
 
         for (const [key, qty] of Object.entries(linkedQuantities)) {
             if (this.f1.displays.qty[key]) {
                 this.f1.displays.qty[key].textContent = qty || '0';
             }
             const price = (qty || 0) * (multipliers[key] || 0);
-            linkedPrices[key] = price;
+            this.f1LinkedPrices[key] = price; // [FIX] Store linked prices
             if (this.f1.displays.price[key]) {
                 this.f1.displays.price[key].textContent = price > 0 ? `$${price.toFixed(2)}` : '';
             }
         }
 
-        this._updateF1Total(linkedPrices);
+        this._updateF1Total();
     }
 
     _renderF2Tab(uiState) {
